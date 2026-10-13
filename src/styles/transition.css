@@ -81,14 +81,14 @@ html.is-animating .transition-swup-fade {
 }
 
 /* 页面加载动画 */
+/* 用 backwards：延遲期間維持起始狀態，播完就回到元素本身的樣式，
+   不會留下常駐的 transform（forwards 會讓文字一直在合成層上，換頁後變糊） */
 .onload-animation {
-  opacity: 0;
-  animation: fade-in-up var(--transition-duration) ease-out forwards;
+  animation: fade-in-up var(--transition-duration) ease-out backwards;
 }
 
 .onload-animation-fade-in {
-  opacity: 0;
-  animation: fade-in var(--transition-duration) ease-in forwards;
+  animation: fade-in var(--transition-duration) ease-in backwards;
 }
 
 /* 渐进式动画延迟 */
@@ -144,14 +144,14 @@ html.is-animating .transition-swup-fade {
   transform: translateX(0);
 }
 
-/* 性能优化 */
-.transition-main,
-.transition-leaving,
-.onload-animation,
-.transition-slide-in,
-.card-animation {
-  transform: translateZ(0);
-  will-change: transform;
+/* 性能优化：只在換頁動畫進行中提升為合成層。
+   常駐的 will-change/translateZ 會讓 Chrome 沿用動畫中途的點陣快取，
+   換頁後文字變糊，重新整理才恢復。 */
+html.is-changing .transition-main,
+html.is-changing .transition-leaving,
+html.is-changing .transition-slide-in,
+html.is-changing .card-animation {
+  will-change: transform, opacity;
 }
 
 /* GPU 加速优化 - 用于 wave 等重型动画 */

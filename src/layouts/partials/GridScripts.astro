@@ -145,7 +145,7 @@ const {
 			}
 
 			bannerWrapper?.classList.remove("mobile-hide-banner");
-			mainContent.style.setProperty("top", `${BANNER_HEIGHT}vh`, "important");
+			mainContent.style.setProperty("top", `round(${BANNER_HEIGHT}vh, 1px)`, "important");
 			return;
 		}
 

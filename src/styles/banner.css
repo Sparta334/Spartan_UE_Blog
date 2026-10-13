@@ -70,7 +70,7 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
 /* 桌面端 Banner 模式下的主内容区域位置 */
 @media (width >= 1280px) {
   body.enable-banner .absolute.w-full.z-30 {
-    top: 35vh !important;
+    top: round(35vh, 1px) !important; /* 對齊整數像素，避免文字變糊 */
   }
 }
 
@@ -433,7 +433,7 @@ html.is-page-transitioning #header-waves {
 @media (width < 1280px) {
   /* 移动端 banner 加载动画优化 */
   .onload-animation-fade-in {
-    animation: mobile-fade-in 0.8s ease-out forwards !important;
+    animation: mobile-fade-in 0.8s ease-out backwards !important;
   }
 }
 

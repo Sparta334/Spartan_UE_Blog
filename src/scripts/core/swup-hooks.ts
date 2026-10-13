@@ -482,7 +482,7 @@ export class SwupHooksManager {
 			bannerWrapper?.classList.remove("mobile-hide-banner");
 			mainContentWrapper.style.setProperty(
 				"top",
-				`${BANNER_HEIGHT}vh`,
+				`round(${BANNER_HEIGHT}vh, 1px)`,
 				"important",
 			);
 			return;

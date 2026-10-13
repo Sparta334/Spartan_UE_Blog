@@ -6,7 +6,7 @@
 
 /* 移动端页面切换性能优化 */
 @media (width < 768px) {
-  /* 为所有动画元素添加硬件加速 */
+  /* 原本常駐 translateZ/will-change 會讓換頁後文字變糊，改為只限制排版範圍 */
   .transition-main,
   .transition-leaving,
   .onload-animation,
@@ -15,9 +15,7 @@
   .nav-animation,
   #dynamic-sidebar,
   .widget-container {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    will-change: transform, opacity;
+    contain: layout style;
   }
 
   /* 优化页面切换动画 */

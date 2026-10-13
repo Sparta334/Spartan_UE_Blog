@@ -160,7 +160,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 	<!-- Main content -->
 	<div
 		class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? "mobile-main-no-banner" : ""} ${siteConfig.wallpaperMode.defaultMode === "none" ? "no-banner-layout" : ""} ${transparentClass}`}
-		style={`top: ${finalMainPanelTop}`}
+		style={`top: round(${finalMainPanelTop}, 1px)`}
 	>
 		<!-- The pointer-events-none here prevent blocking the click event of the TOC -->
 		<div class="relative max-w-(--layout-page-width) mx-auto pointer-events-auto">
