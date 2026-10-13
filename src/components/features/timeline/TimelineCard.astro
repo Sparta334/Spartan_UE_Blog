@@ -192,7 +192,7 @@ const hasLinks = gameLinks.length > 0 || otherLinks.length > 0;
 				item.achievements && item.achievements.length > 0 && (
 					<div class="mb-4">
 						<h4 class="text-xs font-semibold text-black/50 dark:text-white/50 uppercase tracking-wider mb-2">
-							{i18n(I18nKey.timelineAchievements)}
+							{item.achievementsTitle || i18n(I18nKey.timelineAchievements)}
 						</h4>
 						<ul class="space-y-1.5">
 							{item.achievements.map((achievement) => (

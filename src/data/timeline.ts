@@ -12,6 +12,11 @@ export const timelineData: TimelineItem[] = [
 		startDate: "2025-08-01",
 		organization: "新創獨立遊戲公司",
 		skills: ["Unreal Engine"],
+		achievementsTitle: "參與項目",
+		achievements: [
+			"未公開項目(多人連線機甲空戰項目 日本IP)",
+			"未公開項目(一款斜俯視角、風格化的哥德式黑暗奇幻世界的類魂動作冒險遊戲)",
+		],
 		links: [
 			{ name: "公司網站", url: "https://jobsgame.tw/companies/335117", type: "website" },
 		],

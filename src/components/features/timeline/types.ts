@@ -17,6 +17,7 @@ export interface TimelineItem {
 	position?: string;
 	skills?: string[];
 	achievements?: string[];
+	achievementsTitle?: string; // 清單標題，預設「成就榮譽」，例如工作經歷可改成「參與項目」
 	links?: TimelineLink[];
 	icon?: string;
 	logo?: string; // 公司或專案 logo 圖片（放在 public/ 底下的路徑），有填就取代圖示
