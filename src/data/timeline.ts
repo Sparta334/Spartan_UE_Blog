@@ -1,12 +1,14 @@
 import type { TimelineItem } from "../components/features/timeline/types";
 
 // 時間線資料：新增一筆就複製一個 { ... } 區塊，依日期由新到舊排列
+// 專案經歷請填 status（專案現狀）；遊戲連結的 type 用 "game"，會顯示成綠色的「遊戲連結」按鈕
 export const timelineData: TimelineItem[] = [
 	{
 		id: "dreamstrikers",
 		title: "畢業製作：DreamStrikers",
 		description:
-			"受到萬代南夢宮旗下格鬥作品《火影忍者 終極風暴》系列與《Jump Force》啟發，試著製作一款可以輕鬆上手的 3D 格鬥動作遊戲。目前獨立製作中，已推出 Demo，規劃之後轉為免費下載。",
+			"受到萬代南夢宮旗下格鬥作品《火影忍者 終極風暴》系列與《Jump Force》啟發，試著製作一款可以輕鬆上手的 3D 格鬥動作遊戲。",
+		status: "獨立製作中，目前僅推出 Demo，但是規劃未來轉免費遊玩",
 		type: "project",
 		startDate: "2024-09-01",
 		organization: "獨立製作",
@@ -18,6 +20,11 @@ export const timelineData: TimelineItem[] = [
 			"青春設計節 評審團獎",
 		],
 		links: [
+			{
+				name: "DreamStrikers Steam 頁面",
+				url: "https://store.steampowered.com/app/3183230/_/",
+				type: "game",
+			},
 			{
 				name: "Epic MegaGrants 2025",
 				url: "https://www.unrealengine.com/news/epic-megagrants-2025-recap-first-submissions-are-now-open",
