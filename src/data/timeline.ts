@@ -12,6 +12,9 @@ export const timelineData: TimelineItem[] = [
 		startDate: "2025-08-01",
 		organization: "新創獨立遊戲公司",
 		skills: ["Unreal Engine"],
+		links: [
+			{ name: "公司網站", url: "https://jobsgame.tw/companies/335117", type: "website" },
+		],
 		icon: "material-symbols:work",
 		featured: true,
 	},
