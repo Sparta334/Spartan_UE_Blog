@@ -1,0 +1,43 @@
+---
+import { Icon } from "astro-icon/components";
+
+import PostList from "@/components/site/PostList.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getTopicGroups, type TopicGroup } from "@/utils/topic-utils";
+import { url } from "@/utils/url-utils";
+
+export async function getStaticPaths() {
+	const groups = await getTopicGroups();
+	return groups.map((group) => ({ params: { topic: group.topic.id }, props: { group } }));
+}
+
+const { group } = Astro.props as { group: TopicGroup };
+const { topic, posts } = group;
+---
+
+<SiteLayout title={topic.name} description={topic.description} section="topics">
+	<div class="container-site pt-10">
+		<nav class="breadcrumb">
+			<a href={url("/topics/")}>技术专题</a>
+			<span>/</span>
+			<span>{topic.name}</span>
+		</nav>
+		<h1 class="page-title flex items-center gap-3">
+			<Icon name={topic.icon} class="h-7 w-7 text-(--accent-strong)" />
+			{topic.name}
+		</h1>
+		<p class="page-lead">{topic.description}</p>
+		{
+			posts.length === 0 ? (
+				<div class="pending py-10">
+					<p>这个专题还没有文章</p>
+					<p>
+						文章 frontmatter 写 <code>category: {topic.name}</code> 就会出现在这里
+					</p>
+				</div>
+			) : (
+				<PostList posts={posts} showTopic={false} />
+			)
+		}
+	</div>
+</SiteLayout>

@@ -1,0 +1,75 @@
+---
+import { url } from "@/utils/url-utils";
+import { formatPostDate, type Post, postUrl, topicOf, topicUrl } from "@/utils/topic-utils";
+
+interface Props {
+	posts: Post[];
+	showTopic?: boolean;
+}
+const { posts, showTopic = true } = Astro.props;
+---
+
+<ul class="post-list">
+	{
+		posts.map((post) => {
+			const topic = topicOf(post);
+			return (
+				<li data-tags={post.data.tags.join("|")}>
+					<div class="post-meta">
+						<time>{formatPostDate(post)}</time>
+						{showTopic && <a href={topicUrl(topic)}>{topic.name}</a>}
+						{post.data.ueVersion && <span>UE {post.data.ueVersion}</span>}
+					</div>
+					<a class="post-title" href={postUrl(post)}>
+						{post.data.title}
+					</a>
+					{post.data.description && <p class="post-desc">{post.data.description}</p>}
+					{post.data.tags.length > 0 && (
+						<div class="mt-2 flex flex-wrap gap-1.5">
+							{post.data.tags.map((tag) => (
+								<a class="tag" href={url(`/archive/?tag=${encodeURIComponent(tag)}`)}>
+									{tag}
+								</a>
+							))}
+						</div>
+					)}
+				</li>
+			);
+		})
+	}
+</ul>
+
+<style>
+	.post-list {
+		border-top: 1px solid var(--border);
+	}
+	.post-list li {
+		padding: 1rem 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.post-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.9rem;
+		font-size: 0.8rem;
+		color: var(--text-3);
+	}
+	.post-meta a:hover {
+		color: var(--accent-strong);
+	}
+	.post-title {
+		display: inline-block;
+		margin-top: 0.15rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: #e6eaee;
+	}
+	.post-title:hover {
+		color: var(--accent-strong);
+	}
+	.post-desc {
+		margin-top: 0.2rem;
+		font-size: 0.9rem;
+		color: var(--text-2);
+	}
+</style>

@@ -4,7 +4,7 @@ import type { ExpressiveCodeConfig } from "../types/config";
 export const expressiveCodeConfig: ExpressiveCodeConfig = {
 	darkTheme: "github-dark",
 	lightTheme: "github-light",
-	defaultWrap: true,
+	defaultWrap: false,
 	// 是否在主题切换时隐藏代码块以避免卡顿问题
 	hideDuringThemeTransition: true,
 	languageBadge: {

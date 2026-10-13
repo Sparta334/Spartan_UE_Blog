@@ -79,22 +79,22 @@ const pages = [
 	{
 		name: "Homepage",
 		htmlPath: "index.html",
-		requiredMarkup: [],
+		requiredMarkup: [["site-header", "site header"]],
 		requiredRules: [
-			["--page-bg:", "page background variable"],
-			["--card-bg:", "card background variable"],
-			["--radius-large:", "shared radius variable"],
-			["#banner-carousel", "banner layout styles"],
-			[".widget-container", "responsive widget styles"],
+			["--site-bg:", "site background variable"],
+			["--panel:", "panel background variable"],
 		],
 	},
 	{
-		name: "About page",
-		htmlPath: "about/index.html",
-		requiredMarkup: [["card-github", "rendered GitHub repository card"]],
+		name: "Post page",
+		htmlPath: "posts/ue-cpp/uproperty-cheatsheet/index.html",
+		requiredMarkup: [
+			["doc-nav", "topic navigation"],
+			["expressive-code", "rendered code block"],
+		],
 		requiredRules: [
-			[".card-github", "GitHub repository card styles"],
-			[".custom-md .image-grid", "extended Markdown layout styles"],
+			[".custom-md", "Markdown content styles"],
+			[".copy-btn", "code block copy button styles"],
 		],
 	},
 ];

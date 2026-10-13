@@ -1,0 +1,30 @@
+---
+import PostList from "@/components/site/PostList.astro";
+import TopicCards from "@/components/site/TopicCards.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getTopicGroups, topicUrl } from "@/utils/topic-utils";
+
+const groups = await getTopicGroups();
+---
+
+<SiteLayout title="技术专题" section="topics">
+	<div class="container-site pt-10">
+		<h1 class="page-title">Unreal 技术专题</h1>
+		<p class="page-lead">按专题整理的 Unreal Engine 技术笔记。</p>
+		<TopicCards groups={groups} />
+
+		{
+			groups
+				.filter((g) => g.posts.length > 0)
+				.map((g) => (
+					<section class="mt-12">
+						<div class="section-title">
+							<h2>{g.topic.name}</h2>
+							<a href={topicUrl(g.topic)}>进入专题</a>
+						</div>
+						<PostList posts={g.posts} showTopic={false} />
+					</section>
+				))
+		}
+	</div>
+</SiteLayout>

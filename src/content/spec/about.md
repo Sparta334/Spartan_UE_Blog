@@ -1,9 +1,17 @@
-## 關於我
+## 个人方向
 
-我是 Spartan，平常研究 Unreal Engine，這裡用來記錄我研究過或寫過的技術：C++、Blueprint、GAS、PCG、渲染、工具開發等等。
+我是 Spartan，Unreal Engine 开发者。这里记录我研究过、写过的 UE 技术，主要方向是 UE C++、GAS、多人联机与工具开发。
 
-## 關於這個網站
+<!-- 待填写：更具体的个人方向，例如工作经历、正在研究的主题 -->
 
-使用 [Astro](https://astro.build/) 與 [Mizuki](https://github.com/LyraVoid/Mizuki) 主題建置。
+## 代表作品
 
-::github{repo="LyraVoid/Mizuki"}
+代表项目整理在 [项目](../projects/) 页面。
+
+<!-- 待填写：在 src/data/showcase-projects.ts 添加项目后，这里可以补充一两句介绍 -->
+
+## 联系方式
+
+- GitHub：[Sparta334](https://github.com/Sparta334)
+- Steam：待填写
+- 邮箱：待填写

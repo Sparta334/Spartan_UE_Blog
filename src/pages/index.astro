@@ -1,0 +1,54 @@
+---
+import PostList from "@/components/site/PostList.astro";
+import ProfileHeader from "@/components/site/ProfileHeader.astro";
+import ProjectCards from "@/components/site/ProjectCards.astro";
+import SteamShowcase from "@/components/site/SteamShowcase.astro";
+import TopicCards from "@/components/site/TopicCards.astro";
+import { showcaseProjects } from "@/data/showcase-projects";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getLatestPosts, getTopicGroups } from "@/utils/topic-utils";
+import { url } from "@/utils/url-utils";
+
+const groups = (await getTopicGroups()).filter((g) => g.topic.id !== "other");
+const latest = await getLatestPosts(6);
+const featured = showcaseProjects.filter((p) => p.featured);
+const projects = (featured.length > 0 ? featured : showcaseProjects).slice(0, 3);
+---
+
+<SiteLayout section="home">
+	<ProfileHeader />
+
+	<div class="container-site flex flex-col gap-12 pt-10">
+		<section>
+			<div class="section-title">
+				<h2>代表项目</h2>
+				<a href={url("/projects/")}>全部项目</a>
+			</div>
+			<ProjectCards projects={projects} />
+		</section>
+
+		<section>
+			<div class="section-title">
+				<h2>Unreal 技术专题</h2>
+				<a href={url("/topics/")}>全部专题</a>
+			</div>
+			<TopicCards groups={groups} />
+		</section>
+
+		<section>
+			<div class="section-title">
+				<h2>最新文章</h2>
+				<a href={url("/archive/")}>全部文章</a>
+			</div>
+			<PostList posts={latest} />
+		</section>
+
+		<section>
+			<div class="section-title">
+				<h2>Steam 全成就</h2>
+				<a href={url("/achievements/")}>查看全部</a>
+			</div>
+			<SteamShowcase limit={6} />
+		</section>
+	</div>
+</SiteLayout>

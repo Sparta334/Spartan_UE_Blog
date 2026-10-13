@@ -1,11 +1,11 @@
 import type { SiteConfig } from "../types/config";
 
 // 定义站点语言
-const SITE_LANG = "zh_TW"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
+const SITE_LANG = "zh_CN"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
 
 export const siteConfig: SiteConfig = {
-	title: "Spartan 的 Unreal 筆記",
-	subtitle: "Unreal Engine 技術研究紀錄",
+	title: "Spartan 的 Unreal 笔记",
+	subtitle: "Unreal Engine 技术博客",
 	siteURL: "https://sparta334.github.io/Spartan_UE_Blog/", // 请替换为你的站点URL，以斜杠结尾
 	siteStartDate: "2026-10-13", // 站点开始运行日期，用于站点统计组件计算运行天数
 	timeZone: "Asia/Taipei", // 文章日期使用的 IANA 时区，可改为 Asia/Tokyo、Europe/Berlin 等
@@ -13,7 +13,7 @@ export const siteConfig: SiteConfig = {
 	lang: SITE_LANG,
 
 	themeColor: {
-		hue: 240, // 主题色的默认色相，范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345
+		hue: 230, // 主题色的默认色相，范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345
 		fixed: false, // 对访问者隐藏主题色选择器
 	},
 
@@ -50,7 +50,7 @@ export const siteConfig: SiteConfig = {
 
 	font: {
 		// custom 保持 ZenMaruGothic -> Loli -> 系统字体的显示顺序；system 不加载任何自定义字体
-		mode: "custom",
+		mode: "system",
 	},
 
 	bangumi: {

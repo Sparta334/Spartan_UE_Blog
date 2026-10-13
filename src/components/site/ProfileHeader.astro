@@ -1,0 +1,144 @@
+---
+import { Image } from "astro:assets";
+import { Icon } from "astro-icon/components";
+
+import { profile } from "@/data/profile";
+import { url } from "@/utils/url-utils";
+
+interface Props {
+	compact?: boolean;
+}
+const { compact = false } = Astro.props;
+
+const images = import.meta.glob<{ default: ImageMetadata }>(
+	"/src/assets/**/*.{png,jpg,jpeg,webp,avif}",
+);
+const avatarLoader = images[`/src/${profile.avatar}`];
+const avatar = avatarLoader ? (await avatarLoader()).default : undefined;
+---
+
+<section class:list={["profile", { "profile-compact": compact }]}>
+	<div
+		class="profile-banner"
+		style={profile.banner ? `background-image:url(${url(profile.banner)})` : undefined}
+	>
+	</div>
+	<div class="container-site">
+		<div class="profile-body">
+			<div class="profile-avatar">
+				{avatar && <Image src={avatar} alt={profile.name} width={128} height={128} loading="eager" />}
+			</div>
+			<div class="profile-info">
+				<h1>{profile.name}</h1>
+				<p class="profile-title">{profile.title}</p>
+				<p class="profile-bio">{profile.bio}</p>
+			</div>
+			<div class="profile-links">
+				{
+					profile.links.map((link) =>
+						link.url ? (
+							<a class="btn" href={link.url} target="_blank" rel="noopener noreferrer">
+								<Icon name={link.icon} class="h-4 w-4" />
+								{link.name}
+							</a>
+						) : (
+							<span class="btn btn-disabled" title="链接待填写：src/data/profile.ts">
+								<Icon name={link.icon} class="h-4 w-4" />
+								{link.name}（待填写）
+							</span>
+						),
+					)
+				}
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.profile {
+		border-bottom: 1px solid var(--border);
+		background: var(--site-bg-2);
+	}
+	.profile-banner {
+		height: 140px;
+		background-color: #1c232b;
+		background-size: cover;
+		background-position: center;
+		border-bottom: 1px solid var(--border);
+	}
+	.profile-compact .profile-banner {
+		height: 96px;
+	}
+	.profile-body {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 1rem 1.5rem;
+		align-items: start;
+		padding: 1rem 0 1.5rem;
+	}
+	.profile-avatar {
+		width: 112px;
+		height: 112px;
+		border: 2px solid var(--border-strong);
+		border-radius: 4px;
+		background: var(--panel);
+		overflow: hidden;
+		margin-top: -56px;
+	}
+	.profile-avatar :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.profile-info h1 {
+		font-size: 1.6rem;
+		font-weight: 600;
+		line-height: 1.2;
+		color: #e6eaee;
+	}
+	.profile-title {
+		margin-top: 0.15rem;
+		color: var(--accent-strong);
+		font-size: 0.9rem;
+	}
+	.profile-bio {
+		margin-top: 0.35rem;
+		color: var(--text-2);
+		font-size: 0.9rem;
+	}
+	.profile-links {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	@media (min-width: 768px) {
+		.profile-banner {
+			height: 160px;
+		}
+		.profile-body {
+			grid-template-columns: auto 1fr auto;
+			align-items: center;
+		}
+		.profile-avatar {
+			width: 128px;
+			height: 128px;
+			margin-top: -64px;
+			align-self: start;
+		}
+		.profile-links {
+			grid-column: auto;
+			justify-content: flex-end;
+		}
+	}
+	@media (max-width: 480px) {
+		.profile-body {
+			grid-template-columns: 1fr;
+		}
+		.profile-avatar {
+			width: 88px;
+			height: 88px;
+			margin-top: -48px;
+		}
+	}
+</style>

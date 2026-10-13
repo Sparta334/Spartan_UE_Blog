@@ -1,0 +1,90 @@
+---
+import { Icon } from "astro-icon/components";
+
+import type { ShowcaseProject } from "@/data/showcase-projects";
+import { url } from "@/utils/url-utils";
+
+interface Props {
+	projects: ShowcaseProject[];
+}
+const { projects } = Astro.props;
+---
+
+{
+	projects.length === 0 ? (
+		<div class="pending py-10">
+			<p>代表项目待填写</p>
+			<p>
+				在 <code>src/data/showcase-projects.ts</code> 添加项目与截图
+			</p>
+		</div>
+	) : (
+		<div class="project-grid">
+			{projects.map((p) => (
+				<article class="project-card panel">
+					{p.image ? (
+						<img class="project-img" src={url(p.image)} alt={p.title} loading="lazy" />
+					) : (
+						<div class="project-img placeholder-img">项目截图待补充</div>
+					)}
+					<div class="p-4">
+						<div class="flex items-baseline justify-between gap-3">
+							<h3>{p.title}</h3>
+							{p.period && <span class="text-xs muted">{p.period}</span>}
+						</div>
+						<p class="project-summary">{p.summary}</p>
+						{p.tags.length > 0 && (
+							<div class="mt-3 flex flex-wrap gap-1.5">
+								{p.tags.map((t) => (
+									<span class="tag">{t}</span>
+								))}
+							</div>
+						)}
+						{(p.demo || p.source) && (
+							<div class="mt-4 flex flex-wrap gap-2">
+								{p.demo && (
+									<a class="btn" href={p.demo} target="_blank" rel="noopener noreferrer">
+										<Icon name="material-symbols:play-circle-outline" class="h-4 w-4" />
+										演示
+									</a>
+								)}
+								{p.source && (
+									<a class="btn" href={p.source} target="_blank" rel="noopener noreferrer">
+										<Icon name="material-symbols:code" class="h-4 w-4" />
+										源码
+									</a>
+								)}
+							</div>
+						)}
+					</div>
+				</article>
+			))}
+		</div>
+	)
+}
+
+<style>
+	.project-grid {
+		display: grid;
+		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	}
+	.project-card {
+		overflow: hidden;
+	}
+	.project-img {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+		border-bottom: 1px solid var(--border);
+	}
+	.project-card h3 {
+		font-weight: 600;
+		color: #e6eaee;
+	}
+	.project-summary {
+		margin-top: 0.35rem;
+		font-size: 0.9rem;
+		color: var(--text-2);
+	}
+</style>

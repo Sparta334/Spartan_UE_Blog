@@ -4,7 +4,6 @@ import sitemap from "@astrojs/sitemap";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
-import swup from "@swup/astro";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 import expressiveCode from "astro-expressive-code";
@@ -120,25 +119,6 @@ export default defineConfig({
 		oddmisc({
 			umami: {
 				shareUrl: false,
-			},
-		}),
-		swup({
-			theme: false,
-			animationClass: "transition-swup-",
-			containers: ["main"],
-			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
-			cache: true,
-			preload: false, // 禁用预加载以提升性能
-			accessibility: true,
-			updateHead: process.env.NODE_ENV === "production",
-			updateBodyClass: false,
-			globalInstance: true,
-			// 滚动相关配置优化
-			resolveUrl: (url) => url,
-			animateHistoryBrowsing: false,
-			skipPopStateHandling: (event) => {
-				// 跳过锚点链接的处理，让浏览器原生处理
-				return event.state?.url?.includes("#");
 			},
 		}),
 		icon({
