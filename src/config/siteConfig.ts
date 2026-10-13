@@ -158,7 +158,7 @@ export const siteConfig: SiteConfig = {
 
 			subtitle: [
 				"記錄研究過、寫過的 Unreal Engine 技術",
-				"C++ / Blueprint / GAS / PCG / Rendering",
+				"C++ / Blueprint / Unreal / C# / Unity",
 			],
 			typewriter: {
 				enable: true, // 启用副标题打字机效果
