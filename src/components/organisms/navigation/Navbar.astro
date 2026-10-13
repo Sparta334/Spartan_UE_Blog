@@ -310,11 +310,11 @@ if (document.readyState === 'loading') {
 }
 </script>
 
-<script is:inline>
+<script is:inline define:vars={{ baseUrl: import.meta.env.BASE_URL }}>
 window.loadPagefind = async function() {
     if (window.pagefind) {return;}
     try {
-        const scriptUrl = new URL('pagefind/pagefind.js', window.location.origin).href;
+        const scriptUrl = new URL(`${baseUrl}pagefind/pagefind.js`, window.location.origin).href;
         const response = await fetch(scriptUrl, { method: 'HEAD' });
         if (!response.ok) {
             throw new Error(`Pagefind script not found: ${response.status}`);

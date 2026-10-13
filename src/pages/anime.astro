@@ -16,7 +16,7 @@ import {
 import { widgetManager } from "../utils/widget-manager";
 
 if (!siteConfig.featurePages.anime) {
-	return Astro.redirect("/404/");
+	return Astro.redirect(`${import.meta.env.BASE_URL}404/`);
 }
 
 const hasRightSidebars =

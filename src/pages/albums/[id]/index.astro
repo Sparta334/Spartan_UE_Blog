@@ -1,4 +1,5 @@
 ---
+import { url } from "@/utils/url-utils";
 import { PhotoCard } from "@components/features/albums";
 import PasswordProtection from "@components/features/auth/PasswordProtection.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -12,7 +13,7 @@ import type { AlbumGroup, Photo } from "../../../types/album";
 import { scanAlbums } from "../../../utils/album-scanner";
 
 if (!siteConfig.featurePages.albums) {
-	return Astro.redirect("/404/");
+	return Astro.redirect(`${import.meta.env.BASE_URL}404/`);
 }
 
 export const getStaticPaths = async () => {
@@ -30,7 +31,7 @@ interface Props {
 const { album } = Astro.props;
 
 if (!album) {
-	return Astro.redirect("/404/");
+	return Astro.redirect(`${import.meta.env.BASE_URL}404/`);
 }
 
 const isEncrypted = !!album.password;
@@ -78,7 +79,7 @@ if (isEncrypted) {
 
 					{/* Back button */}
 					<a
-						href="/albums/"
+						href={url("/albums/")}
 						class="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-colors"
 					>
 						<Icon
@@ -140,7 +141,7 @@ if (isEncrypted) {
 			) : (
 				<div class="card-base px-6 py-4">
 					<a
-						href="/albums/"
+						href={url("/albums/")}
 						class="inline-flex items-center gap-1 text-sm text-(--primary) hover:underline mb-3"
 					>
 						<Icon

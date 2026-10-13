@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
+import { resolveAssetUrl } from "@/utils/asset-url";
 import type { ProjectCardProps } from "./types";
 
 const { project, maxTechStack = 4 } = Astro.props as ProjectCardProps;
@@ -35,7 +36,7 @@ const getStatusText = (status: string) => {
 			<div class="aspect-video overflow-hidden relative bg-linear-to-br from-(--primary)/5 to-(--primary)/10">
 				{hasImage ? (
 					<img
-						src={project.image!}
+						src={resolveAssetUrl(project.image!)}
 						alt={project.title}
 						class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
 						loading="lazy"

@@ -1,4 +1,5 @@
 ---
+import { url } from "@/utils/url-utils";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -100,7 +101,7 @@ const t = (key: string) => i18n(key as I18nKey);
 						<article class="bg-(--card-bg) rounded-xl p-4 border border-(--line-divider) hover:border-(--primary) transition-all duration-300">
 							<h3 class="text-lg font-semibold text-90 mb-2 hover:text-(--primary) transition-colors">
 								<a
-									href={`/posts/${post.id}/`}
+									href={url(`/posts/${post.id}/`)}
 									class="hover:underline"
 								>
 									{post.data.title}

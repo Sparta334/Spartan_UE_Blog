@@ -315,7 +315,7 @@ onMount(() => {
 						{@const [, m, d] = post.date.split("-")}
 						{@const dateStr = `${parseInt(m)}-${parseInt(d)}`}
 						<a
-							href="/posts/{post.id}/"
+							href="{import.meta.env.BASE_URL}posts/{post.id}/"
 							class="flex items-center justify-between text-sm transition-colors px-2 py-2 rounded-lg group border border-transparent
 								{isCurrentPost
 								? 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/10'

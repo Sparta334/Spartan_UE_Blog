@@ -11,7 +11,7 @@ import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 
 if (!siteConfig.featurePages.aiTools) {
-	return Astro.redirect("/404/");
+	return Astro.redirect(`${import.meta.env.BASE_URL}404/`);
 }
 
 const categories = [...new Set(aiToolsData.map((tool) => tool.category))];

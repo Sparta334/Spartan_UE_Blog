@@ -113,7 +113,7 @@ onMount(async () => {
 
 			{#each group.posts as post (post.id)}
 				<a
-					href={post.url || `/posts/${post.id}/`}
+					href={post.url || `${import.meta.env.BASE_URL}posts/${post.id}/`}
 					aria-label={post.data.title}
 					class="group btn-plain block! h-10 w-full rounded-lg hover:text-[initial]"
 				>
