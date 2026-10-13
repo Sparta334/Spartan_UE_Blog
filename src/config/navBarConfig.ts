@@ -131,6 +131,11 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		{
+			name: "全成就",
+			url: "/achievements/",
+			icon: "fa7-brands:steam",
+		},
+		{
 			name: "其他",
 			url: "#",
 			icon: "material-symbols:more-horiz",

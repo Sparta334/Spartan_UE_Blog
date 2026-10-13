@@ -1,0 +1,259 @@
+---
+import { Icon } from "astro-icon/components";
+
+import {
+	perfectGames,
+	type SteamGame,
+	steamProfileUrl,
+	steamStoreUrl,
+	totalPerfectAchievements,
+} from "../../../data/steam-games";
+import { url } from "../../../utils/url-utils";
+
+interface Props {
+	// row：首頁一排自動捲動；grid：全成就頁的完整展示欄
+	variant?: "row" | "grid";
+	class?: string;
+}
+const { variant = "grid", class: className } = Astro.props;
+
+// 跑馬燈需要兩份內容才能無縫循環
+const rowGames: SteamGame[] = variant === "row" ? [...perfectGames, ...perfectGames] : perfectGames;
+---
+
+<!-- 外層包一層，避免背景動畫覆蓋 onload-animation 的淡入動畫 -->
+<div class={className}>
+<section class:list={["steam-showcase", `steam-showcase-${variant}`]}>
+	<header class="steam-head">
+		<div class="steam-title">
+			<Icon name="fa7-brands:steam" class="h-5 w-5" />
+			<span>全成就達成者展示欄</span>
+		</div>
+		<div class="steam-stats">
+			<span><strong>{perfectGames.length}</strong> 款全成就遊戲</span>
+			<span><strong>{totalPerfectAchievements}</strong> 項成就</span>
+		</div>
+	</header>
+
+	<div class="steam-body">
+		<div class:list={["steam-track", { "steam-marquee": variant === "row" }]}>
+			{
+				rowGames.map((game, i) => (
+					<a
+						class="steam-card"
+						href={steamStoreUrl(game)}
+						target="_blank"
+						rel="noopener noreferrer"
+						title={game.name}
+						aria-hidden={variant === "row" && i >= perfectGames.length ? "true" : undefined}
+						tabindex={variant === "row" && i >= perfectGames.length ? -1 : undefined}
+					>
+						<div class="steam-cover">
+							<img src={game.cover} alt={game.name} loading="lazy" referrerpolicy="no-referrer" />
+							<span class="steam-shine" />
+						</div>
+						<div class="steam-bar">
+							<span>
+								{game.unlocked} / {game.total} 項成就
+							</span>
+							{game.completedAt && <span class="steam-date">{game.completedAt}</span>}
+						</div>
+						<svg class="steam-medal" viewBox="0 0 40 40" aria-label="全成就">
+							<polygon
+								fill="#4a8fe0"
+								points="20,0 23,6 29,2 30,9 37,8 34,14 40,17 35,21 39,27 32,28 33,35 26,33 23,40 20,34 17,40 14,33 7,35 8,28 1,27 5,21 0,17 6,14 3,8 10,9 11,2 17,6"
+							/>
+							<circle cx="20" cy="20" r="11" fill="#f4c430" stroke="#c99a12" stroke-width="1.5" />
+							<circle cx="17" cy="16.5" r="3" fill="#fff3b0" opacity="0.7" />
+						</svg>
+					</a>
+				))
+			}
+		</div>
+	</div>
+
+	<footer class="steam-foot">
+		{
+			variant === "row" ? (
+				<a href={url("/achievements/")}>
+					查看完整展示欄 <Icon name="material-symbols:chevron-right-rounded" class="h-4 w-4" />
+				</a>
+			) : (
+				<span />
+			)
+		}
+		<a href={steamProfileUrl} target="_blank" rel="noopener noreferrer">
+			Steam 個人檔案 <Icon name="material-symbols:open-in-new-rounded" class="h-4 w-4" />
+		</a>
+	</footer>
+</section>
+</div>
+
+<style>
+	.steam-showcase {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--radius-large);
+		color: #c7d5e0;
+		/* 類似 Steam 個人檔案的動態背景：深藍、紫、青緩慢流動 */
+		background: linear-gradient(120deg, #16202d, #1b2838 25%, #2a1f3f 50%, #123a43 75%, #16202d);
+		background-size: 300% 300%;
+		animation: steamBg 18s ease-in-out infinite;
+		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+	}
+	@keyframes steamBg {
+		0% { background-position: 0% 50%; }
+		50% { background-position: 100% 50%; }
+		100% { background-position: 0% 50%; }
+	}
+	.steam-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
+		padding: 0.75rem 1rem;
+		background: linear-gradient(90deg, rgba(20, 60, 70, 0.6), rgba(60, 30, 90, 0.35));
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	}
+	.steam-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-weight: 600;
+		color: #e5eef5;
+	}
+	.steam-stats {
+		display: flex;
+		gap: 1rem;
+		font-size: 0.85rem;
+		color: #8fa3b5;
+	}
+	.steam-stats strong {
+		font-size: 1.1rem;
+		color: #f4c430;
+		font-variant-numeric: tabular-nums;
+	}
+	.steam-body {
+		padding: 1rem;
+		background: rgba(0, 0, 0, 0.18);
+	}
+	.steam-showcase-grid .steam-track {
+		display: grid;
+		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	}
+	/* 首頁：一排自動捲動，滑鼠移上去暫停 */
+	.steam-showcase-row .steam-body {
+		overflow: hidden;
+		mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+	}
+	.steam-marquee {
+		display: flex;
+		gap: 0.9rem;
+		width: max-content;
+		animation: steamMarquee 40s linear infinite;
+	}
+	.steam-showcase-row:hover .steam-marquee {
+		animation-play-state: paused;
+	}
+	.steam-showcase-row .steam-card {
+		width: 240px;
+		flex-shrink: 0;
+	}
+	@keyframes steamMarquee {
+		from { transform: translateX(0); }
+		to { transform: translateX(calc(-50% - 0.45rem)); }
+	}
+	.steam-card {
+		position: relative;
+		display: block;
+		background: #0e141b;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+		transition: transform 0.25s ease, box-shadow 0.25s ease;
+	}
+	.steam-card:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(102, 192, 244, 0.6);
+	}
+	.steam-cover {
+		position: relative;
+		overflow: hidden;
+		aspect-ratio: 460 / 215;
+		background: #1b2838;
+	}
+	.steam-cover img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.5s ease;
+	}
+	.steam-card:hover .steam-cover img {
+		transform: scale(1.06);
+	}
+	/* 滑過時的一道反光 */
+	.steam-shine {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+		transform: translateX(-120%);
+	}
+	.steam-card:hover .steam-shine {
+		transition: transform 0.8s ease;
+		transform: translateX(120%);
+	}
+	.steam-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.2rem 3rem 0.2rem 0.6rem;
+		background: linear-gradient(90deg, #1a5fb4, #2f7ee6);
+		color: #fff;
+		font-size: 0.82rem;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+	.steam-date {
+		font-weight: 400;
+		font-size: 0.72rem;
+		opacity: 0.85;
+	}
+	.steam-medal {
+		position: absolute;
+		right: 0.35rem;
+		bottom: -0.35rem;
+		width: 2.4rem;
+		height: 2.4rem;
+		filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+		animation: medalPulse 3.2s ease-in-out infinite;
+	}
+	@keyframes medalPulse {
+		0%, 100% { transform: rotate(0deg) scale(1); }
+		50% { transform: rotate(8deg) scale(1.06); }
+	}
+	.steam-foot {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.6rem 1rem;
+		font-size: 0.85rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+	}
+	.steam-foot a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		color: #66c0f4;
+	}
+	.steam-foot a:hover {
+		color: #fff;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.steam-showcase,
+		.steam-marquee,
+		.steam-medal {
+			animation: none;
+		}
+	}
+</style>

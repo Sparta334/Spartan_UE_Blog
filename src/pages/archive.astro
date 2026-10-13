@@ -1,38 +1,57 @@
 ---
-import PostList from "@/components/site/PostList.astro";
-import SiteLayout from "@/layouts/SiteLayout.astro";
-import { getLatestPosts } from "@/utils/topic-utils";
-import { url } from "@/utils/url-utils";
+import ArchivePanel from "@components/features/archive/ArchivePanel.svelte";
+import CategoryBar from "@components/features/posts/CategoryBar.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPostsList } from "@utils/content-utils";
 
-const posts = await getLatestPosts();
+import { siteConfig } from "../config";
+
+const sortedPostsList = await getSortedPostsList();
+
+const showCategoryBar = siteConfig.postListLayout.categoryBar?.enable ?? false;
+
+// 1. 修复类型兼容性：将 category 的 null 转换为 undefined
+const posts = sortedPostsList.map((post) => ({
+	id: post.id,
+	url: post.url,
+	data: {
+		title: post.data.title,
+		tags: post.data.tags,
+		category: post.data.category === null ? undefined : post.data.category,
+		published: post.data.published,
+		_publishedDateOnly: post.data._publishedDateOnly,
+		alias: post.data.alias,
+		permalink: post.data.permalink,
+	},
+}));
+
+// 2. 提取所有标签 (去重)
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+
+// 3. 提取所有分类 (去重且过滤掉 undefined)
+const categories = [
+	...new Set(
+		posts
+			.map((post) => post.data.category)
+			.filter((c): c is string => typeof c === "string"),
+	),
+];
 ---
 
-<SiteLayout title="全部文章" section="topics">
-	<div class="container-site pt-10">
-		<h1 class="page-title">全部文章</h1>
-		<p class="page-lead" id="archive-filter-note">共 {posts.length} 篇。</p>
-		<p class="mb-4 hidden text-sm" id="archive-filter-clear">
-			<a href={url("/archive/")} class="text-(--accent-strong)">清除标签筛选</a>
-		</p>
-		<div id="archive-list">
-			<PostList posts={posts} />
-		</div>
-	</div>
-</SiteLayout>
+<MainGridLayout title={i18n(I18nKey.archive)}>
+	{showCategoryBar && <CategoryBar />}
+	<!-- 引入右侧边栏布局管理器 -->
+	<script>
+		import("../scripts/right-sidebar-layout.js");
+	</script>
 
-<script>
-	// 支持 /archive/?tag=xxx 按标签筛选
-	const tag = new URLSearchParams(location.search).get("tag");
-	if (tag) {
-		const items = document.querySelectorAll<HTMLElement>("#archive-list li[data-tags]");
-		let count = 0;
-		items.forEach((li) => {
-			const match = (li.dataset.tags ?? "").split("|").includes(tag);
-			li.hidden = !match;
-			if (match) count++;
-		});
-		const note = document.getElementById("archive-filter-note");
-		if (note) note.textContent = `标签「${tag}」：${count} 篇。`;
-		document.getElementById("archive-filter-clear")?.classList.remove("hidden");
-	}
-</script>
+	<!-- 修复：补全缺失的 tags 和 categories 属性 -->
+	<ArchivePanel
+		sortedPosts={posts}
+		tags={tags}
+		categories={categories}
+		client:only="svelte"
+	/>
+</MainGridLayout>

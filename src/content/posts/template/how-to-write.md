@@ -4,6 +4,7 @@ published: 2026-10-01
 description: "這個部落格的寫作說明：檔案放哪裡、frontmatter 欄位、程式碼區塊與提示框語法。"
 tags: [說明]
 category: 網站說明
+pinned: true
 draft: false
 ---
 
@@ -29,8 +30,7 @@ published: 2026-10-13
 description: "列表上顯示的摘要"
 image: "./cover.webp"   # 封面，可省略
 tags: [UE5, Rendering]
-category: UE C++        # 填專題名稱：UE C++ / GAS / 多人联机 / 工具开发
-ueVersion: "5.4"        # 適用的 UE 版本，可省略
+category: Rendering
 draft: false            # true 時不會發布
 ---
 ```

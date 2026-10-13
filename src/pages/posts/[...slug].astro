@@ -1,449 +1,421 @@
 ---
-import { Icon } from "astro-icon/components";
-
-import Markdown from "@/components/misc/Markdown.astro";
-import SiteLayout from "@/layouts/SiteLayout.astro";
-import { renderPostContent } from "@/utils/content-renderer";
-import { getSortedPosts } from "@/utils/content-utils";
+import { getImage } from "astro:assets";
+import type { CollectionEntry } from "astro:content";
+import path from "node:path";
+import Comment from "@components/comment/index.astro";
 import {
-	formatPostDate,
-	getTopicGroups,
-	type Post,
-	postUrl,
-	topicOf,
-	topicUrl,
-} from "@/utils/topic-utils";
-import { removeFileExtension, url } from "@/utils/url-utils";
-import { profile } from "@/data/profile";
-import { siteConfig } from "@/config";
+	LastModified,
+	PostMeta,
+	PostNavigation,
+	RandomPosts,
+	RelatedPosts,
+	ShareCard,
+} from "@components/features/posts";
+import { ReadingTime, WordCount } from "@components/features/posts/atoms";
+import License from "@components/misc/License.astro";
+import Markdown from "@components/misc/Markdown.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { renderPostContent } from "@utils/content-renderer";
+import { getRelatedPosts, getSortedPosts } from "@utils/content-utils";
+import { hasCustomPermalink, initPostIdMap } from "@utils/permalink-utils";
+import { getPostPublicDescription } from "@utils/post-card-content";
+import { resolvePostCoverSource } from "@utils/post-cover-source";
+import { getFileDirFromPath, removeFileExtension } from "@utils/url-utils";
+import {
+	licenseConfig,
+	permalinkConfig,
+	randomPostsConfig,
+	relatedPostsConfig,
+	shareConfig,
+} from "src/config";
+
+import Image from "../../components/atoms/Image/Image.astro";
+import Encryptor from "../../components/features/auth/Encryptor.astro";
+import { profileConfig, siteConfig } from "../../config";
+import { formatDateToYYYYMMDD } from "../../utils/date-utils";
 
 export async function getStaticPaths() {
-	const posts = await getSortedPosts();
-	return posts.map((entry) => ({
-		params: { slug: removeFileExtension(entry.id) },
-		props: { entry },
-	}));
+	const blogEntries = await getSortedPosts();
+
+	// 初始化文章 ID 映射（用于 %post_id% 占位符）
+	initPostIdMap(blogEntries);
+
+	const paths: {
+		params: { slug: string };
+		props: { entry: CollectionEntry<"posts"> };
+	}[] = [];
+
+	for (const entry of blogEntries) {
+		// 将 id 转换为 slug（移除扩展名）以匹配路由参数
+		const defaultSlug = removeFileExtension(entry.id);
+
+		// 如果文章有自定义 permalink，不在 /posts/ 下创建路径
+		// 而是通过根目录的 [permalink].astro 处理
+		if (hasCustomPermalink(entry)) {
+			// 仍然需要在 /posts/ 下创建默认路径以便兼容旧链接
+			paths.push({
+				params: { slug: defaultSlug },
+				props: { entry },
+			});
+			continue;
+		}
+
+		// 如果全局 permalink 功能启用，不在 /posts/ 下创建路径
+		// 而是通过根目录的 [permalink].astro 处理
+		if (permalinkConfig.enable) {
+			// 仍然保留默认 slug 路径以便兼容旧链接
+			paths.push({
+				params: { slug: defaultSlug },
+				props: { entry },
+			});
+		} else {
+			// 全局 permalink 功能未启用
+			// 为每篇文章创建默认的 slug 路径
+			paths.push({
+				params: { slug: defaultSlug },
+				props: { entry },
+			});
+
+			// 如果文章有 alias，也创建对应的路径
+			if (entry.data.alias) {
+				// 移除开头的斜杠和结尾的斜杠
+				// 同时移除可能的 "posts/" 前缀，避免重复
+				let alias = entry.data.alias.replace(/^\/+/, "").replace(/\/+$/, "");
+				if (alias.startsWith("posts/")) {
+					alias = alias.replace(/^posts\//, "");
+				}
+				paths.push({
+					params: { slug: alias },
+					props: { entry },
+				});
+			}
+		}
+	}
+
+	return paths;
 }
 
-const { entry } = Astro.props as { entry: Post };
-const { Content, headings } = await renderPostContent(entry, {
-	target: "page",
-	site: Astro.site ?? siteConfig.siteURL,
+const { entry } = Astro.props;
+const { Content, headings, remarkPluginFrontmatter } = await renderPostContent(
+	entry,
+	{ target: "page", site: Astro.site ?? siteConfig.siteURL },
+);
+
+// 获取相关文章
+const relatedPosts = relatedPostsConfig.enable
+	? await getRelatedPosts(entry, relatedPostsConfig.maxCount)
+	: [];
+
+const cover = await resolvePostCoverSource(entry.data, {
+	contentFilePath: entry.filePath,
+	basePath: getFileDirFromPath(entry.filePath || ""),
+	identity: entry.id,
+	imageApi: siteConfig.banner.imageApi,
 });
+const coverSrc = cover.src ?? "";
 
-const groups = await getTopicGroups();
-const topic = topicOf(entry);
-const topicPosts = groups.find((g) => g.topic.id === topic.id)?.posts ?? [];
-const index = topicPosts.findIndex((p) => p.id === entry.id);
-const prev = index > 0 ? topicPosts[index - 1] : undefined;
-const next = index >= 0 && index < topicPosts.length - 1 ? topicPosts[index + 1] : undefined;
+// Process cover image, for both OG and SharePoster
+let ogCoverUrl: string | undefined;
+let posterCoverUrl = coverSrc;
 
-// 标题文字末尾会带上锚点符号「#」，目录里去掉
-const toc = headings
-	.filter((h) => h.depth >= 2 && h.depth <= 3)
-	.map((h) => ({ ...h, text: h.text.replace(/#$/, "").trim() }));
-const published = formatPostDate(entry, "published");
-const updated = formatPostDate(entry, "updated");
+if (coverSrc) {
+	if (cover.kind === "local") {
+		const files = import.meta.glob<ImageMetadata>("../../**", {
+			import: "default",
+		});
+		const normalizedPath = path
+			.normalize(path.join("../../", cover.basePath || "", coverSrc))
+			.replace(/\\/g, "/");
+		const file = files[normalizedPath];
+		if (file) {
+			const img = await file();
+			posterCoverUrl = img.src;
+
+			// Resize for OG
+			const ogImage = await getImage({
+				src: img,
+				width: 1200,
+				format: "jpeg",
+				quality: 80,
+			});
+			ogCoverUrl = ogImage.src;
+		}
+	} else if (/^https?:\/\//i.test(coverSrc)) {
+		// Retain the original URL for OG
+		ogCoverUrl = coverSrc;
+
+		// Convert to base64 only for poster
+		try {
+			const response = await fetch(coverSrc);
+			const arrayBuffer = await response.arrayBuffer();
+			const base64 = Buffer.from(arrayBuffer).toString("base64");
+			const contentType = response.headers.get("content-type") || "image/jpeg";
+			posterCoverUrl = `data:${contentType};base64,${base64}`;
+		} catch {
+			posterCoverUrl = coverSrc;
+		}
+	} else {
+		ogCoverUrl = coverSrc; // absolute path like "/images/foo.png"
+	}
+}
+
+// Process avatar image for SharePoster
+let posterAvatarUrl = profileConfig.avatar;
+if (profileConfig.avatar) {
+	const isLocal = !(
+		profileConfig.avatar.startsWith("/") ||
+		profileConfig.avatar.startsWith("http") ||
+		profileConfig.avatar.startsWith("https") ||
+		profileConfig.avatar.startsWith("data:")
+	);
+	if (isLocal) {
+		const files = import.meta.glob<ImageMetadata>("../../**", {
+			import: "default",
+		});
+		const normalizedPath = path
+			.normalize(path.join("../../", profileConfig.avatar))
+			.replace(/\\/g, "/");
+		const file = files[normalizedPath];
+		if (file) {
+			const img = await file();
+			posterAvatarUrl = img.src;
+		}
+	}
+}
+
+// 判断是否为加密文章
+const isEncrypted = !!(entry.data.encrypted && entry.data.password);
+const publicDescription = getPostPublicDescription(
+	entry.data,
+	entry.data.title,
+);
 
 const jsonLd = {
 	"@context": "https://schema.org",
 	"@type": "BlogPosting",
 	headline: entry.data.title,
-	description: entry.data.description,
+	description: publicDescription,
 	keywords: entry.data.tags,
-	author: { "@type": "Person", name: profile.name },
+	author: {
+		"@type": "Person",
+		name: profileConfig.name,
+		url: Astro.site,
+	},
 	datePublished: entry.data.published.toISOString(),
-	...(entry.data.updated && { dateModified: entry.data.updated.toISOString() }),
+	...(entry.data.updated && {
+		dateModified: entry.data.updated.toISOString(),
+	}),
+	inLanguage: entry.data.lang
+		? entry.data.lang.replace("_", "-")
+		: siteConfig.lang.replace("_", "-"),
+	// TODO include cover image here
 };
 ---
 
-<SiteLayout title={entry.data.title} description={entry.data.description} section="topics" ogType="article">
-	<script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-
-	<div class="doc container-site">
-		<!-- 左侧：专题与文章导航 -->
-		<aside class="doc-nav" aria-label="专题导航">
-			<details class="doc-drawer" data-drawer>
-				<summary>
-					<Icon name="material-symbols:menu-book-outline" class="h-4 w-4" />
-					专题导航
-				</summary>
-				<nav class="doc-nav-inner">
-					{
-						groups.map((g) => (
-							<div class="doc-nav-group">
-								<a class="doc-nav-topic" href={topicUrl(g.topic)}>
-									{g.topic.name}
-								</a>
-								{g.posts.length > 0 ? (
-									<ul>
-										{g.posts.map((p) => (
-											<li>
-												<a href={postUrl(p)} aria-current={p.id === entry.id ? "page" : undefined}>
-													{p.data.title}
-												</a>
-											</li>
-										))}
-									</ul>
-								) : (
-									<p class="doc-nav-empty">暂无文章</p>
-								)}
-							</div>
-						))
-					}
-				</nav>
-			</details>
-		</aside>
-
-		<!-- 中间：正文 -->
-		<article class="doc-main">
-			<nav class="breadcrumb">
-				<a href={url("/topics/")}>技术专题</a>
-				<span>/</span>
-				<a href={topicUrl(topic)}>{topic.name}</a>
-			</nav>
-			<h1 class="doc-title" data-pagefind-meta="title">{entry.data.title}</h1>
-			{entry.data.description && <p class="doc-lead">{entry.data.description}</p>}
-
-			<dl class="doc-meta">
-				<div>
-					<dt>适用版本</dt>
-					<dd>{entry.data.ueVersion ? `UE ${entry.data.ueVersion}` : <span class="muted">未标注</span>}</dd>
+<MainGridLayout
+	banner={coverSrc}
+	title={entry.data.title}
+	description={publicDescription}
+	lang={entry.data.lang}
+	setOGTypeArticle={true}
+	postSlug={entry.id}
+	headings={headings}
+	coverImage={ogCoverUrl}
+	publishedDate={entry.data.published}
+	publishedDateOnly={entry.data._publishedDateOnly}
+	category={entry.data.category || undefined}
+	wordCount={remarkPluginFrontmatter.words}
+>
+	<script
+		is:inline
+		slot="head"
+		type="application/ld+json"
+		set:html={JSON.stringify(jsonLd)}
+	/>
+	<!-- 引入右侧边栏布局管理器 -->
+	<script>
+		import("../../scripts/right-sidebar-layout.js");
+	</script>
+	<div
+		class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4"
+	>
+		<div
+			id="post-container"
+			class:list={[
+				"card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full ",
+				{},
+			]}
+		>
+			<!-- word count and reading time -->
+			<div
+				class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
+			>
+				<div class="flex flex-row items-center">
+					<WordCount
+						words={remarkPluginFrontmatter.words}
+						variant="card"
+					/>
 				</div>
-				<div>
-					<dt>发布</dt>
-					<dd>{published}</dd>
+				<div class="flex flex-row items-center">
+					<ReadingTime
+						minutes={remarkPluginFrontmatter.minutes}
+						variant="card"
+					/>
 				</div>
-				<div>
-					<dt>更新</dt>
-					<dd>{updated || published}</dd>
+			</div>
+
+			<!-- title -->
+			<div class="relative onload-animation">
+				<div
+					data-pagefind-body
+					data-pagefind-weight="10"
+					data-pagefind-meta="title"
+					class="transition w-full block font-bold mb-3
+                    text-3xl md:text-[2.25rem]/[2.75rem]
+                    text-black/90 dark:text-white/90
+                    md:before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
+                    before:absolute before:top-3 before:-left-4.5"
+				>
+					{entry.data.title}
 				</div>
+			</div>
+
+			<!-- metadata -->
+			<div class="onload-animation">
+				<PostMeta
+					className="mb-5"
+					published={entry.data.published}
+					publishedDateOnly={entry.data._publishedDateOnly}
+					updated={entry.data.updated}
+					updatedDateOnly={entry.data._updatedDateOnly}
+					tags={entry.data.tags}
+					category={entry.data.category || undefined}
+					id={entry.id}
+					showEncrypted={isEncrypted}
+				/>
 				{
-					entry.data.tags.length > 0 && (
-						<div class="doc-meta-tags">
-							<dt>标签</dt>
-							<dd class="flex flex-wrap gap-1.5">
-								{entry.data.tags.map((tag) => (
-									<a class="tag" href={url(`/archive/?tag=${encodeURIComponent(tag)}`)}>
-										{tag}
-									</a>
-								))}
-							</dd>
-						</div>
+					(!coverSrc ||
+						(coverSrc &&
+							!siteConfig.showCoverInContent)) && (
+						<div class="mt-4 border-(--line-divider) border-dashed border-b mb-5" />
 					)
 				}
-			</dl>
+			</div>
+
+			<!-- always show cover as long as it has one -->
 
 			{
-				toc.length > 0 && (
-					<details class="doc-drawer doc-toc-mobile">
-						<summary>
-							<Icon name="material-symbols:toc" class="h-4 w-4" />
-							本页目录
-						</summary>
-						<ul class="doc-toc-list">
-							{toc.map((h) => (
-								<li class:list={[`depth-${h.depth}`]}>
-									<a href={`#${h.slug}`}>{h.text}</a>
-								</li>
-							))}
-						</ul>
-					</details>
+				coverSrc && siteConfig.showCoverInContent && (
+					<>
+						<div class="mt-4" />
+						<Image
+							id="post-cover"
+							src={coverSrc}
+							basePath={cover.basePath}
+							class="mb-8 rounded-xl banner-container onload-animation"
+							widths={[640, 1024, 1536, 2048]}
+							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+						/>
+					</>
 				)
 			}
 
-			<Markdown class="doc-content">
-				<Content />
-			</Markdown>
-
-			<nav class="doc-pager" aria-label="上一篇 / 下一篇">
-				{
-					prev ? (
-						<a href={postUrl(prev)}>
-							<span>上一篇</span>
-							{prev.data.title}
-						</a>
-					) : (
-						<span />
-					)
-				}
-				{
-					next ? (
-						<a href={postUrl(next)} class="text-right">
-							<span>下一篇</span>
-							{next.data.title}
-						</a>
-					) : (
-						<span />
-					)
-				}
-			</nav>
-			<p class="mt-4 text-sm">
-				<a href={topicUrl(topic)} class="inline-flex items-center gap-1 text-(--accent-strong) hover:underline">
-					<Icon name="material-symbols:arrow-back" class="h-4 w-4" />
-					返回「{topic.name}」专题
-				</a>
-			</p>
-		</article>
-
-		<!-- 右侧：本页目录 -->
-		<aside class="doc-toc" aria-label="本页目录">
 			{
-				toc.length > 0 && (
-					<div class="doc-toc-inner">
-						<p class="doc-toc-title">本页目录</p>
-						<ul class="doc-toc-list" data-toc>
-							{toc.map((h) => (
-								<li class:list={[`depth-${h.depth}`]}>
-									<a href={`#${h.slug}`} data-slug={h.slug}>
-										{h.text}
-									</a>
-								</li>
-							))}
-						</ul>
+				isEncrypted ? (
+					<Encryptor
+						password={entry.data.password}
+						slug={entry.id}
+						hint={entry.data.passwordHint}
+					>
+						<Markdown class="mb-6 markdown-content onload-animation">
+							<Content />
+						</Markdown>
+					</Encryptor>
+				) : (
+					<Markdown class="mb-6 markdown-content onload-animation">
+						<Content />
+					</Markdown>
+				)
+			}
+
+			{
+				shareConfig.enable && (
+					<ShareCard
+						class:list={[{ "encrypted-hidden": isEncrypted }]}
+						title={entry.data.title}
+						author={entry.data.author}
+						description={publicDescription}
+						pubDate={formatDateToYYYYMMDD(
+							entry.data.published,
+							entry.data._publishedDateOnly,
+						)}
+						coverImage={posterCoverUrl}
+						url={Astro.url.toString()}
+						siteTitle={siteConfig.title}
+						avatar={posterAvatarUrl}
+					/>
+				)
+			}
+
+			{
+				licenseConfig.enable && (
+					<div
+						id="license-component"
+						class:list={[
+							"encrypted-hidden-wrapper",
+							{ "encrypted-hidden": isEncrypted },
+						]}
+					>
+						<License
+							title={entry.data.title}
+							id={entry.id}
+							pubDate={entry.data.published}
+							pubDateOnly={entry.data._publishedDateOnly}
+
+							author={entry.data.author}
+							sourceLink={entry.data.sourceLink}
+							licenseName={entry.data.licenseName}
+							licenseUrl={entry.data.licenseUrl}
+							class="mb-6 rounded-xl license-container onload-animation"
+						/>
 					</div>
 				)
 			}
-		</aside>
+		</div>
 	</div>
-</SiteLayout>
 
-<script>
-	// 桌面端左侧导航始终展开；手机端默认收起
-	const desktop = window.matchMedia("(min-width: 1024px)");
-	const drawer = document.querySelector<HTMLDetailsElement>("[data-drawer]");
-	const syncDrawer = () => {
-		if (drawer) drawer.open = desktop.matches;
-	};
-	syncDrawer();
-	desktop.addEventListener("change", syncDrawer);
+	<!-- 评论 -->
+	<Comment post={entry} />
 
-	// 手机端点目录链接后收起目录
-	document.querySelectorAll<HTMLDetailsElement>(".doc-toc-mobile").forEach((d) => {
-		d.addEventListener("click", (e) => {
-			if ((e.target as Element).closest("a")) d.open = false;
-		});
-	});
-
-	// 右侧目录高亮当前章节
-	const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-toc] a[data-slug]"));
-	const targets = links
-		.map((a) => document.getElementById(a.dataset.slug ?? ""))
-		.filter((el): el is HTMLElement => !!el);
-	if (targets.length > 0) {
-		const setActive = () => {
-			const offset = 100;
-			let current = targets[0];
-			for (const t of targets) {
-				if (t.getBoundingClientRect().top - offset <= 0) current = t;
-			}
-			links.forEach((a) => a.classList.toggle("active", a.dataset.slug === current.id));
-		};
-		setActive();
-		window.addEventListener("scroll", setActive, { passive: true });
-	}
-</script>
-
-<style>
-	.doc {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: 0 2.5rem;
-		padding-top: 1.5rem;
-	}
-	.doc-main {
-		min-width: 0;
-	}
-	.doc-title {
-		font-size: 1.85rem;
-		font-weight: 600;
-		line-height: 1.3;
-		color: #e6eaee;
-	}
-	.doc-lead {
-		margin-top: 0.5rem;
-		color: var(--text-2);
-	}
-	.doc-meta {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.6rem 2rem;
-		margin: 1.25rem 0 1.5rem;
-		padding: 0.8rem 1rem;
-		background: var(--panel);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		font-size: 0.85rem;
-	}
-	.doc-meta dt {
-		font-size: 0.72rem;
-		color: var(--text-3);
-	}
-	.doc-meta dd {
-		color: var(--text);
-	}
-	.doc-content {
-		margin-top: 0.5rem;
+	{
+		siteConfig.showLastModified && (
+			<LastModified
+				updatedDate={entry.data.updated || entry.data.published}
+			/>
+		)
 	}
 
-	/* 手机端抽屉 */
-	.doc-drawer {
-		margin-bottom: 1rem;
-		background: var(--panel);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-	}
-	.doc-drawer > summary {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.6rem 0.9rem;
-		font-size: 0.875rem;
-		color: var(--text-2);
-		cursor: pointer;
-		list-style: none;
-	}
-	.doc-drawer > summary::-webkit-details-marker {
-		display: none;
-	}
-	.doc-drawer[open] > summary {
-		border-bottom: 1px solid var(--border);
-	}
+	<PostNavigation
+		prevSlug={entry.data.nextSlug}
+		prevTitle={entry.data.nextTitle}
+		nextSlug={entry.data.prevSlug}
+		nextTitle={entry.data.prevTitle}
+	/>
 
-	/* 左侧导航 */
-	.doc-nav-inner {
-		padding: 0.75rem 0.9rem;
+	<!-- 相关文章与随机文章 -->
+	{
+		(relatedPostsConfig.enable || randomPostsConfig.enable) && (
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+				{relatedPostsConfig.enable && relatedPosts.length > 0 && (
+					<RelatedPosts relatedPosts={relatedPosts} />
+				)}
+				{randomPostsConfig.enable && (
+					<RandomPosts
+						excludeIds={[entry.id]}
+						maxCount={randomPostsConfig.maxCount}
+					/>
+				)}
+			</div>
+		)
 	}
-	.doc-nav-group + .doc-nav-group {
-		margin-top: 1rem;
-	}
-	.doc-nav-topic {
-		display: block;
-		margin-bottom: 0.3rem;
-		font-size: 0.78rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		color: var(--text-3);
-	}
-	.doc-nav-topic:hover {
-		color: var(--accent-strong);
-	}
-	.doc-nav ul a {
-		display: block;
-		padding: 0.25rem 0.6rem;
-		border-left: 2px solid var(--border);
-		font-size: 0.85rem;
-		line-height: 1.45;
-		color: var(--text-2);
-	}
-	.doc-nav ul a:hover {
-		color: var(--text);
-	}
-	.doc-nav ul a[aria-current="page"] {
-		border-left-color: var(--accent);
-		color: var(--accent-strong);
-		background: var(--accent-soft);
-	}
-	.doc-nav-empty {
-		padding-left: 0.7rem;
-		font-size: 0.8rem;
-		color: var(--text-3);
-	}
-
-	/* 目录 */
-	.doc-toc {
-		display: none;
-	}
-	.doc-toc-title {
-		margin-bottom: 0.5rem;
-		font-size: 0.78rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		color: var(--text-3);
-	}
-	.doc-toc-list {
-		padding: 0.4rem 0;
-	}
-	.doc-toc-mobile .doc-toc-list {
-		padding: 0.5rem 0.9rem;
-	}
-	.doc-toc-list a {
-		display: block;
-		padding: 0.2rem 0;
-		font-size: 0.82rem;
-		line-height: 1.45;
-		color: var(--text-2);
-	}
-	.doc-toc-list a:hover,
-	.doc-toc-list a.active {
-		color: var(--accent-strong);
-	}
-	.doc-toc-list .depth-3 a {
-		padding-left: 0.9rem;
-	}
-
-	/* 上一篇 / 下一篇 */
-	.doc-pager {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-		margin-top: 3rem;
-		padding-top: 1.5rem;
-		border-top: 1px solid var(--border);
-	}
-	.doc-pager a {
-		display: block;
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--panel);
-		font-size: 0.9rem;
-		color: var(--text);
-	}
-	.doc-pager a:hover {
-		border-color: var(--accent);
-	}
-	.doc-pager a span {
-		display: block;
-		font-size: 0.75rem;
-		color: var(--text-3);
-	}
-
-	@media (min-width: 1024px) {
-		.doc {
-			grid-template-columns: 220px minmax(0, 1fr);
-		}
-		.doc-nav > .doc-drawer {
-			position: sticky;
-			top: calc(var(--header-h) + 1.5rem);
-			max-height: calc(100vh - var(--header-h) - 3rem);
-			overflow-y: auto;
-			margin: 0;
-			background: none;
-			border: none;
-		}
-		.doc-nav > .doc-drawer > summary {
-			display: none;
-		}
-		.doc-nav-inner {
-			padding: 0;
-		}
-	}
-	@media (min-width: 1280px) {
-		.doc {
-			grid-template-columns: 220px minmax(0, 1fr) 200px;
-		}
-		.doc-toc {
-			display: block;
-		}
-		.doc-toc-inner {
-			position: sticky;
-			top: calc(var(--header-h) + 1.5rem);
-			max-height: calc(100vh - var(--header-h) - 3rem);
-			overflow-y: auto;
-		}
-		.doc-toc-mobile {
-			display: none;
-		}
-	}
-</style>
+</MainGridLayout>

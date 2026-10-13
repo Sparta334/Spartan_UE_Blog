@@ -33,6 +33,7 @@ const {
 	type="module"
 	is:inline
 	define:vars={{
+		baseUrl: import.meta.env.BASE_URL,
 		navbarTransparentMode,
 		defaultWallpaperMode,
 		defaultPostListLayout,
@@ -95,7 +96,10 @@ const {
 
 		const isMobile = window.innerWidth < 1280;
 		const isHomePage =
-			window.location.pathname === "/" || window.location.pathname === "";
+			window.location.pathname === "/" ||
+			window.location.pathname === "" ||
+			window.location.pathname === baseUrl ||
+			window.location.pathname === baseUrl.replace(/\/$/, "");
 
 		mainContent.classList.remove("mobile-main-no-banner", "no-banner-layout");
 		mainContent.style.removeProperty("min-height");

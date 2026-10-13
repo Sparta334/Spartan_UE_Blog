@@ -1,12 +1,14 @@
 ---
-import SteamShowcase from "@/components/site/SteamShowcase.astro";
-import SiteLayout from "@/layouts/SiteLayout.astro";
+import { PageHeader } from "@components/features/page-header";
+import SteamShowcase from "@components/features/steam/SteamShowcase.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 ---
 
-<SiteLayout title="Steam 全成就" section="achievements">
-	<div class="container-site pt-10">
-		<h1 class="page-title">Steam 全成就</h1>
-		<p class="page-lead">达成全部成就的游戏。点击卡片前往对应的 Steam 商店页面。</p>
-		<SteamShowcase />
+<MainGridLayout title="全成就" description="Steam 全成就達成的遊戲">
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-6 md:px-9 py-6 relative w-full">
+			<PageHeader title="全成就" />
+			<SteamShowcase variant="grid" class="mt-4 onload-animation" />
+		</div>
 	</div>
-</SiteLayout>
+</MainGridLayout>

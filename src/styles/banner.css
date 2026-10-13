@@ -982,3 +982,22 @@ html.is-page-transitioning .banner-page-overlay {
   filter: none !important;
   transition: none !important;
 }
+
+/* 橫幅緩慢平移，營造類似 Steam 個人檔案動態背景的效果 */
+@keyframes bannerDrift {
+  0% {
+    transform: scale(1.12) translate3d(-3%, 0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate3d(3%, 0, 0);
+  }
+}
+#banner-carousel img {
+  animation: bannerDrift 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  #banner-carousel img {
+    animation: none;
+  }
+}

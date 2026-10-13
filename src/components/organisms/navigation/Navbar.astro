@@ -18,7 +18,8 @@ const className = Astro.props.class;
 const navbarTransparentMode =
 	siteConfig.banner?.navbar?.transparentMode || "semi";
 
-const isHomePage = Astro.url.pathname === "/" || Astro.url.pathname === "";
+// 部署在子路徑（GitHub Pages 專案頁）時，首頁是 BASE_URL 而不是 "/"
+const isHomePage = ["/", "", import.meta.env.BASE_URL, import.meta.env.BASE_URL.replace(/\/$/, "")].includes(Astro.url.pathname);
 
 // featurePage URL -> config key mapping
 const featurePageUrlMap: Record<string, string> = {

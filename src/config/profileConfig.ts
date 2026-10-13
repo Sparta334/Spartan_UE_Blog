@@ -13,7 +13,12 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "GitHub",
 			icon: "fa7-brands:github",
-			url: "https://github.com/", // 換成你的 GitHub
+			url: "https://github.com/Sparta334",
+		},
+		{
+			name: "Steam",
+			icon: "fa7-brands:steam",
+			url: "https://steamcommunity.com/profiles/76561198414738133/",
 		},
 	],
 };

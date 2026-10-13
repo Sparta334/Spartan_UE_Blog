@@ -3,7 +3,7 @@ title: "GAS 入門：ASC 要放在 Pawn 還是 PlayerState？"
 published: 2026-10-12
 description: "Gameplay Ability System 初始化時最常遇到的選擇：AbilitySystemComponent 的擁有者放哪裡，以及 InitAbilityActorInfo 的呼叫時機。"
 tags: [UE5, GAS, Multiplayer]
-category: GAS
+category: Gameplay
 draft: false
 ---
 

@@ -115,7 +115,11 @@ export function generatePostItems(): PostItem[] {
  * 检查是否为首页
  */
 export function checkIsHomePage(): boolean {
-	const pathname = window.location.pathname;
+	// 去掉 base 路徑（GitHub Pages 子路徑）再判斷
+	const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+	const pathname = base && window.location.pathname.startsWith(base)
+		? window.location.pathname.slice(base.length) || "/"
+		: window.location.pathname;
 	return pathname === "/" || pathname === "" || /^\/\d+\/?$/.test(pathname);
 }
 
