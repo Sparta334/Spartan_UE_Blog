@@ -4,6 +4,18 @@ import type { TimelineItem } from "../components/features/timeline/types";
 // 專案經歷請填 status（專案現狀）；遊戲連結的 type 用 "game"，會顯示成綠色的「遊戲連結」按鈕
 export const timelineData: TimelineItem[] = [
 	{
+		id: "animal-players",
+		title: "動物玩家股份有限公司",
+		description:
+			"在職參與公司內多個專案，依公司專案項目的人力分配調動，擔任過主程式、副程式與後期維護人員，主要處理 Unreal 相關專案。",
+		type: "work",
+		startDate: "2025-08-01",
+		organization: "新創獨立遊戲公司",
+		skills: ["Unreal Engine"],
+		icon: "material-symbols:work",
+		featured: true,
+	},
+	{
 		id: "dreamstrikers",
 		title: "畢業製作：DreamStrikers",
 		description:
