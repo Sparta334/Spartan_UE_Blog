@@ -9,8 +9,13 @@ export function isRemoteAssetUrl(value: string): boolean {
 }
 
 export function resolveAssetUrl(value: string): string {
-	if (!value || isRemoteAssetUrl(value) || value.startsWith("/")) {
+	if (!value || isRemoteAssetUrl(value)) {
 		return value;
 	}
-	return `/${value}`;
+	// 網站部署在子路徑（例如 /Spartan_UE_Blog/）時，本地資源要加上 base 才找得到
+	const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+	if (value.startsWith("/")) {
+		return base && !value.startsWith(`${base}/`) ? `${base}${value}` : value;
+	}
+	return `${base}/${value}`;
 }
