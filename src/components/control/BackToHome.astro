@@ -12,7 +12,7 @@ import { i18n } from "@i18n/translation";
 	class="hide"
 />
 
-<script is:raw is:inline define:vars={{ homeUrl: "/" }}>
+<script is:raw is:inline define:vars={{ homeUrl: import.meta.env.BASE_URL }}>
 	window.backToHome = function () {
 		if (window.swup) {
 			window.swup.navigate(homeUrl);
@@ -22,7 +22,7 @@ import { i18n } from "@i18n/translation";
 	};
 </script>
 
-<script is:inline define:vars={{ homeUrl: "/" }}>
+<script is:inline define:vars={{ homeUrl: import.meta.env.BASE_URL }}>
 	function updateBackToHomeVisibility() {
 		const btn = document.getElementById("back-to-home-btn");
 		if (!btn) {
