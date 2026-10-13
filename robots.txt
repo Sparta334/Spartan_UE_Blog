@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /
+Allow: /$
+Allow: /posts/
+
+Sitemap: https://sparta334.github.io/Spartan_UE_Blog/sitemap-index.xml
