@@ -1,1 +1,0 @@
-import"./translation.93KonxnD.js";import"./config.DiSKUi4D.js";import"./date-utils.BVWeRagH.js";function p(r,t){return r.replace(/^\/|\/$/g,"").toLowerCase()===t.replace(/^\/|\/$/g,"").toLowerCase()}function e(...r){return r.join("/").replace(/\/+/g,"/")}function i(r){return e("","/Spartan_UE_Blog/",r)}export{i as n,p as t};
