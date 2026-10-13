@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   # 允许你在 GitHub 上的 Actions 标签中手动触发此"工作流程"
   workflow_dispatch:
+  # 每天自動重新建置一次，更新 Steam 全成就資料（UTC 20:00 = 台灣時間 04:00）
+  schedule:
+    - cron: "0 20 * * *"
 
 # 需要写入权限来推送到pages分支
 permissions:
@@ -37,6 +40,9 @@ jobs:
       
       - name: Build site
         run: pnpm run build
+        env:
+          # 在 Settings → Secrets and variables → Actions 新增 STEAM_API_KEY
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
         # 如果需要启用内容分离，在此加上 env: 并配置
         # ENABLE_CONTENT_SYNC / CONTENT_REPO_URL / USE_SUBMODULE
 
