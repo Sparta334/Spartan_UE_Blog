@@ -103,6 +103,18 @@ const subtitle = i18n(I18nKey.projectsSubtitle);
 				}
 			</div>
 
+			{
+				projectsData.length === 0 && (
+					<div class="text-center py-16 text-black/40 dark:text-white/40">
+						<Icon
+							name="material-symbols:construction-rounded"
+							class="text-6xl text-black/15 dark:text-white/15 mb-4"
+						/>
+						<p class="text-lg">專案整理中，敬請期待</p>
+					</div>
+				)
+			}
+
 			<div id="no-results" class="hidden text-center py-16">
 				<Icon
 					name="material-symbols:search-off-rounded"
