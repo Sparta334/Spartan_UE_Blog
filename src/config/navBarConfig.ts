@@ -146,11 +146,6 @@ export const navBarConfig: NavBarConfig = {
 					icon: "material-symbols:work",
 				},
 				{
-					name: "技能",
-					url: "/skills/",
-					icon: "material-symbols:psychology",
-				},
-				{
 					name: "時間線",
 					url: "/timeline/",
 					icon: "material-symbols:timeline",

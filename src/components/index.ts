@@ -6,7 +6,6 @@ export * from "./features/pio";
 export * from "./features/posts";
 export * from "./features/projects";
 export * from "./features/settings";
-export * from "./features/skills";
 export * from "./features/stats";
 export * from "./features/timeline";
 export * from "./features/toc";
