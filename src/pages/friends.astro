@@ -135,7 +135,7 @@ const allTags = Array.from(new Set(friendsList.flatMap((item) => item.tags)));
 	</div>
 
 	<!-- 引用全局脚本 -->
-	<script is:inline src="/js/friends-page-handler.js"></script>
+	<script is:inline src={`${import.meta.env.BASE_URL}js/friends-page-handler.js`}></script>
 
 	<div class="mt-4">
 		<Comment path="/friends/" />
