@@ -131,9 +131,9 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		{
-			name: "全成就",
-			url: "/achievements/",
-			icon: "fa7-brands:steam",
+			name: "專案展示",
+			url: "/projects/",
+			icon: "material-symbols:work",
 		},
 		{
 			name: "其他",
@@ -141,9 +141,9 @@ export const navBarConfig: NavBarConfig = {
 			icon: "material-symbols:more-horiz",
 			children: [
 				{
-					name: "專案展示",
-					url: "/projects/",
-					icon: "material-symbols:work",
+					name: "全成就",
+					url: "/achievements/",
+					icon: "fa7-brands:steam",
 				},
 				{
 					name: "時間線",

@@ -1,7 +1,3 @@
-import clCover from "../../../assets/music/cover/cl.webp?url";
-import dazbeeCover from "../../../assets/music/cover/dazbee.webp?url";
-import hitoriCover from "../../../assets/music/cover/hitori.webp?url";
-import xryxCover from "../../../assets/music/cover/xryx.webp?url";
 import type { Song } from "./types";
 
 export const STORAGE_KEY_VOLUME = "music-player-volume";
@@ -10,38 +6,41 @@ export const DEFAULT_VOLUME = 0.7;
 
 export const DEFAULT_COVER_URL = "/favicon/favicon.ico";
 
+// 封面使用 YouTube 影片縮圖，artist 標示來源
+const ytCover = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+
 export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 1,
-		title: "口笛で愛は歌えない",
-		artist: "Dazbee",
-		cover: dazbeeCover,
-		url: "assets/music/url/dazbee.mp3",
-		duration: 241,
+		title: "三味線ロックの夜",
+		artist: "Samurai Beat",
+		cover: ytCover("To_1NZulJvE"),
+		url: "assets/music/url/shamisen-rock-night.mp3",
+		duration: 236,
 	},
 	{
 		id: 2,
-		title: "ひとり上手",
-		artist: "Kaya",
-		cover: hitoriCover,
-		url: "assets/music/url/hitori.mp3",
-		duration: 253,
+		title: "Bury the Light (Boss Edit)",
+		artist: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
+		cover: ytCover("g_93xQfRjEI"),
+		url: "assets/music/url/bury-the-light.mp3",
+		duration: 337,
 	},
 	{
 		id: 3,
-		title: "眩耀夜行",
-		artist: "ス리즈ブーケ",
-		cover: xryxCover,
-		url: "assets/music/url/xryx.mp3",
-		duration: 245,
+		title: "Another World",
+		artist: "控制：共振 原聲帶",
+		cover: ytCover("scUUhl6Lv8Q"),
+		url: "assets/music/url/another-world.mp3",
+		duration: 191,
 	},
 	{
 		id: 4,
-		title: "春雷の頃",
-		artist: "22/7",
-		cover: clCover,
-		url: "assets/music/url/cl.mp3",
-		duration: 242,
+		title: "Manalan Mailla",
+		artist: "控制：共振 原聲帶",
+		cover: ytCover("Qo8VOF3hmqE"),
+		url: "assets/music/url/manalan-mailla.mp3",
+		duration: 155,
 	},
 ];
 
