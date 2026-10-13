@@ -18,10 +18,8 @@ const avatar = avatarLoader ? (await avatarLoader()).default : undefined;
 ---
 
 <section class:list={["profile", { "profile-compact": compact }]}>
-	<div
-		class="profile-banner"
-		style={profile.banner ? `background-image:url(${url(profile.banner)})` : undefined}
-	>
+	<div class:list={["profile-banner", { "has-image": profile.banner }]}>
+		{profile.banner && <img src={url(profile.banner)} alt="" loading="eager" />}
 	</div>
 	<div class="container-site">
 		<div class="profile-body">
@@ -62,12 +60,22 @@ const avatar = avatarLoader ? (await avatarLoader()).default : undefined;
 	.profile-banner {
 		height: 140px;
 		background-color: #1c232b;
-		background-size: cover;
-		background-position: center;
 		border-bottom: 1px solid var(--border);
+		overflow: hidden;
+	}
+	.profile-banner img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+		/* 压低饱和度与亮度，保持整体低饱和、不抢内容 */
+		filter: saturate(0.6) brightness(0.75);
+	}
+	.profile-banner.has-image {
+		height: 150px;
 	}
 	.profile-compact .profile-banner {
-		height: 96px;
+		height: 96px !important;
 	}
 	.profile-body {
 		display: grid;
@@ -84,6 +92,9 @@ const avatar = avatarLoader ? (await avatarLoader()).default : undefined;
 		background: var(--panel);
 		overflow: hidden;
 		margin-top: -56px;
+		/* 横幅图片的 filter 会形成层叠上下文，头像需要盖在它上面 */
+		position: relative;
+		z-index: 1;
 	}
 	.profile-avatar :global(img) {
 		width: 100%;
@@ -115,6 +126,9 @@ const avatar = avatarLoader ? (await avatarLoader()).default : undefined;
 	@media (min-width: 768px) {
 		.profile-banner {
 			height: 160px;
+		}
+		.profile-banner.has-image {
+			height: 240px;
 		}
 		.profile-body {
 			grid-template-columns: auto 1fr auto;

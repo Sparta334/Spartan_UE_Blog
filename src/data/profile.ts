@@ -15,7 +15,7 @@ export const profile = {
 	bio: "记录研究过、写过的 Unreal Engine 技术：UE C++、GAS、多人联机与工具开发。",
 	// 个人页横幅（低饱和游戏场景 / 建筑空间 / 工作室画面），放在 public/ 下，例如 "/images/profile-banner.webp"
 	// 留空时使用纯色占位
-	banner: "",
+	banner: "/images/profile-banner.webp",
 	links: [
 		{
 			name: "GitHub",
