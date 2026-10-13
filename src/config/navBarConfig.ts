@@ -141,14 +141,14 @@ export const navBarConfig: NavBarConfig = {
 			icon: "material-symbols:more-horiz",
 			children: [
 				{
-					name: "全成就",
-					url: "/achievements/",
-					icon: "fa7-brands:steam",
-				},
-				{
 					name: "時間線",
 					url: "/timeline/",
 					icon: "material-symbols:timeline",
+				},
+				{
+					name: "全成就",
+					url: "/achievements/",
+					icon: "fa7-brands:steam",
 				},
 			],
 		},
