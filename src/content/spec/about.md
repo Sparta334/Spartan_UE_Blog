@@ -13,5 +13,5 @@
 ## 联系方式
 
 - GitHub：[Sparta334](https://github.com/Sparta334)
-- Steam：待填写
+- Steam：[个人资料](https://steamcommunity.com/profiles/76561198414738133/)
 - 邮箱：待填写

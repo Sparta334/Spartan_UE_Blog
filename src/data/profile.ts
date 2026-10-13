@@ -25,7 +25,7 @@ export const profile = {
 		{
 			name: "Steam",
 			icon: "fa7-brands:steam",
-			url: "", // 待填写：你的 Steam 个人资料链接
+			url: "https://steamcommunity.com/profiles/76561198414738133/",
 		},
 	] satisfies ProfileLink[],
 };
