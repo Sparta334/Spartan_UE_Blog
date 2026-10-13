@@ -1,7 +1,7 @@
 {
-	"updatedAt": "2026-10-13T13:45:22.014Z",
+	"updatedAt": "2026-10-13T13:51:47.537Z",
 	"owned": 235,
-	"checked": 239,
+	"checked": 254,
 	"perfect": 29,
 	"perfectAppIds": [
 		3669870,
@@ -36,7 +36,11 @@
 	],
 	"failedAppIds": [
 		3716600,
-		3824660
+		3824660,
+		480490,
+		775500,
+		387290,
+		524220
 	],
 	"keptPreviousData": false
 }
