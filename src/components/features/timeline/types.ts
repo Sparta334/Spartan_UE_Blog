@@ -19,6 +19,7 @@ export interface TimelineItem {
 	achievements?: string[];
 	links?: TimelineLink[];
 	icon?: string;
+	logo?: string; // 公司或專案 logo 圖片（放在 public/ 底下的路徑），有填就取代圖示
 	color?: string;
 	featured?: boolean;
 }

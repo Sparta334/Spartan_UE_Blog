@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
+import { resolveAssetUrl } from "@/utils/asset-url";
 import type { TimelineCardProps } from "./types";
 
 const { item } = Astro.props as TimelineCardProps;
@@ -100,15 +101,24 @@ const hasLinks = gameLinks.length > 0 || otherLinks.length > 0;
 	>
 		<div class="p-5 sm:p-6">
 			<div class="flex items-start gap-3 mb-3">
-				<div
-					class="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center bg-(--btn-regular-bg)"
-				>
-					<Icon
-						name={icon}
-						class="text-lg"
-						style={`color: ${item.color || "var(--primary)"};`}
+				{item.logo ? (
+					<img
+						src={resolveAssetUrl(item.logo)}
+						alt={item.title}
+						class="w-14 h-14 shrink-0 rounded-lg object-contain"
+						loading="lazy"
 					/>
-				</div>
+				) : (
+					<div
+						class="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center bg-(--btn-regular-bg)"
+					>
+						<Icon
+							name={icon}
+							class="text-lg"
+							style={`color: ${item.color || "var(--primary)"};`}
+						/>
+					</div>
+				)}
 
 				<div class="flex-1 min-w-0">
 					<div class="flex items-center gap-2 mb-0.5">

@@ -16,6 +16,7 @@ export const timelineData: TimelineItem[] = [
 			{ name: "公司網站", url: "https://jobsgame.tw/companies/335117", type: "website" },
 		],
 		icon: "material-symbols:work",
+		logo: "assets/timeline/gaming-animals.webp",
 		featured: true,
 	},
 	{
