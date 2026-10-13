@@ -4,8 +4,8 @@ published: 2026-10-01
 description: "這個部落格的寫作說明：檔案放哪裡、frontmatter 欄位、程式碼區塊與提示框語法。"
 tags: [說明]
 category: 網站說明
-pinned: true
-draft: false
+pinned: false
+draft: true
 ---
 
 ## 檔案位置
