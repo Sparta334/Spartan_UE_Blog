@@ -3,7 +3,7 @@ title: "俯視角遊戲的「軸向吸附」移動：讓鍵盤也能順著樓梯
 published: 2026-10-14
 description: "俯視角遊戲裡，鍵盤只能輸入 8 個方向（上下左右＋4 個斜角）。當場景裡出現斜向的樓梯、窄橋、彎曲的走道，路的走向剛好不在這 8 個方向上時……"
 tags: [Scene Design Actor, C++, UE5]
-category: UE C++
+category: Scene/Level Design Actor
 draft: false
 ---
 
