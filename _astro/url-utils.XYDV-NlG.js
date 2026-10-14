@@ -1,0 +1,1 @@
+import"./translation.CrSpPOk_.js";import"./config.BiS2ipB6.js";import"./date-utils.B-_-3Z4-.js";function p(r,t){return r.replace(/^\/|\/$/g,"").toLowerCase()===t.replace(/^\/|\/$/g,"").toLowerCase()}function e(...r){return r.join("/").replace(/\/+/g,"/")}function i(r){return e("","/Spartan_UE_Blog/",r)}export{i as n,p as t};
