@@ -19,12 +19,17 @@ const { variant = "grid", class: className } = Astro.props;
 
 // 跑馬燈需要兩份內容才能無縫循環
 const rowGames: SteamGame[] = variant === "row" ? [...perfectGames, ...perfectGames] : perfectGames;
+
+// 首頁的一排版本可收合，預設收起：用原生 <details>/<summary>，不需要 JS
+const Outer = variant === "row" ? "details" : "div";
+const Head = variant === "row" ? "summary" : "header";
 ---
 
 <!-- 外層包一層，避免背景動畫覆蓋 onload-animation 的淡入動畫 -->
 <div class={className}>
 <section class:list={["steam-showcase", `steam-showcase-${variant}`]}>
-	<header class="steam-head">
+	<Outer class="steam-details">
+	<Head class="steam-head">
 		<div class="steam-title">
 			<Icon name="fa7-brands:steam" class="h-5 w-5" />
 			<span>全成就達成者展示欄</span>
@@ -33,7 +38,16 @@ const rowGames: SteamGame[] = variant === "row" ? [...perfectGames, ...perfectGa
 			<span><strong>{perfectGames.length}</strong> 款全成就遊戲</span>
 			<span><strong>{totalPerfectAchievements}</strong> 項成就</span>
 		</div>
-	</header>
+		{
+			variant === "row" && (
+				<span class="steam-toggle">
+					<span class="steam-toggle-open">展開</span>
+					<span class="steam-toggle-close">收起</span>
+					<Icon name="material-symbols:expand-more-rounded" class="steam-chevron h-5 w-5" />
+				</span>
+			)
+		}
+	</Head>
 
 	<div class="steam-body">
 		<div class:list={["steam-track", { "steam-marquee": variant === "row" }]}>
@@ -86,6 +100,7 @@ const rowGames: SteamGame[] = variant === "row" ? [...perfectGames, ...perfectGa
 			Steam 個人檔案 <Icon name="material-symbols:open-in-new-rounded" class="h-4 w-4" />
 		</a>
 	</footer>
+	</Outer>
 </section>
 </div>
 
@@ -115,6 +130,38 @@ const rowGames: SteamGame[] = variant === "row" ? [...perfectGames, ...perfectGa
 		padding: 0.75rem 1rem;
 		background: linear-gradient(90deg, rgba(20, 60, 70, 0.6), rgba(60, 30, 90, 0.35));
 		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	}
+	summary.steam-head {
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+	summary.steam-head::-webkit-details-marker {
+		display: none;
+	}
+	details:not([open]) > summary.steam-head {
+		border-bottom: none;
+	}
+	.steam-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.1rem;
+		margin-left: auto;
+		font-size: 0.85rem;
+		color: #66c0f4;
+	}
+	summary.steam-head:hover .steam-toggle {
+		color: #fff;
+	}
+	.steam-chevron {
+		transition: transform 0.25s ease;
+	}
+	details[open] .steam-chevron {
+		transform: rotate(180deg);
+	}
+	details[open] .steam-toggle-open,
+	details:not([open]) .steam-toggle-close {
+		display: none;
 	}
 	.steam-title {
 		display: flex;
