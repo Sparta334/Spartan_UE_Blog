@@ -45,6 +45,21 @@ draft: false
 
 ---
 
+## 效果展示
+
+<div align="center">
+<video src="./demo_stairs.mp4" controls autoplay muted loop playsinline width="800">
+</video>
+<br><em>只按方向鍵，角色就順著斜向的樓梯走上去，再轉到橋面</em>
+</div>
+
+> 🎬 影片無法播放時：[下載 demo_stairs.mp4](./demo_stairs.mp4)
+
+沒有吸附時，樓梯的走向剛好介於兩個方向鍵之間，玩家得不斷交替按鍵、走成鋸齒狀，很容易撞到欄杆；
+加上吸附範圍後，只要大致朝樓梯方向按住一個鍵，角色就會穩定沿著樓梯中線移動。
+
+---
+
 ## 架構
 
 ```
@@ -911,16 +926,48 @@ AddMovementInput(MoveDirection, 1.0f);
 
 ---
 
-## 擺放方式
+## 使用示範：在斜向樓梯上擺一個吸附範圍
 
-**直線樓梯 / 橋**
-1. 拉 `MyMovementGuideVolume` 到場景
-2. `ShapeConfigs` 加一個 Box，調 `BoxExtent` 包住整段路
-3. `GuideMode` = Arrow，旋轉 Actor 讓黃色箭頭對齊路的走向（正反皆可）
-4. 依手感調 `SnapAngle`（建議從 30° 開始）
+<div align="center">
+<video src="./setup_walkthrough.mp4" controls playsinline width="800"></video>
+<br><em>完整操作錄影：擺放 Volume → 設定形狀與吸附模式 → 對齊箭頭 → 進遊戲測試</em>
+</div>
 
-**彎曲的路**
-1. `GuideMode` = Spline（自動隱藏箭頭、顯示 Spline）
+> 🎬 影片無法播放時：[下載 setup_walkthrough.mp4](./setup_walkthrough.mp4)
+
+以下是錄影中的各個步驟：
+
+**1. 把 Volume 拉進場景**
+
+![從 Content Browser 拖曳 Volume 到場景](./setup_01_place.jpg "從 Content Browser 把 Volume（或繼承它的 Blueprint）拖到樓梯上")
+
+**2. 設定範圍形狀與吸附模式**
+
+![Details 面板設定 Guide Mode 與 Snap Angle](./setup_02_details.jpg "Shape Configs 加一個 Box；Guide Mode 選 Arrow，Snap Angle 先用 30°")
+
+- `ShapeConfigs` 加一個 **Box**，調 `BoxExtent` 讓範圍包住整段樓梯（寬度涵蓋整個走道，長度從樓梯口到樓梯頂）
+- `GuideMode` 選 **Arrow**（直線樓梯）
+- `SnapAngle` 先用 **30°**
+
+**3. 旋轉 Actor，讓箭頭對齊樓梯走向**
+
+![旋轉 Actor 讓黃色箭頭對齊樓梯](./setup_03_align.jpg "黃色箭頭就是吸附軸，對齊樓梯的方向（正反都可以，軸是雙向的）")
+
+- 範圍與箭頭會一起旋轉，Box 也會順著樓梯擺好
+- 只看水平方向：箭頭有俯仰角不影響，計算時會壓平到水平面
+
+**4. 換個角度確認**
+
+![從樓梯正上方確認箭頭方向](./setup_04_check.jpg "從其他角度確認箭頭沿著樓梯中線、範圍沒有漏掉樓梯口")
+
+**5. 進遊戲測試**
+
+用鍵盤從樓梯口往上走，大致朝樓梯方向按住一個鍵，角色應該會穩定沿著樓梯移動（如上方「效果展示」）。
+手感太黏就把 `SnapAngle` 調小，吸不到就調大。
+
+### 彎曲的路
+
+1. `GuideMode` 改成 **Spline**（編輯器會自動隱藏箭頭、顯示 Spline）
 2. 沿路中線擺 Spline 控制點，**至少 2 個**
 3. `ShapeConfigs` 用多個 Box 拼出彎道，每個用 `RelativeTransform` 調位置與旋轉
 

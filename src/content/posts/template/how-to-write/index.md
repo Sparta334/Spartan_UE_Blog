@@ -10,15 +10,32 @@ draft: true
 
 ## 檔案位置
 
-每篇文章是一個 Markdown 檔，放在 `src/content/posts/` 底下。可以用資料夾分類，圖片也可以放在同一個資料夾：
+一篇文章一個資料夾，放在 `src/content/posts/<分類資料夾>/<文章>/` 底下，文章內容寫在 `index.md`，圖片和影片跟它放在同一個資料夾：
 
 ```text
 src/content/posts/
-├── ue-cpp/uproperty-cheatsheet.md
-├── gas/gas-setup-notes.md
-└── rendering/my-new-post/
+├── ue-cpp/uproperty-cheatsheet/
+│   └── index.md
+└── ue-cpp/axis-snap-movement/
     ├── index.md
-    └── cover.webp
+    ├── setup_01_place.jpg
+    └── demo_stairs.mp4
+```
+
+文章網址就是資料夾路徑，例如 `/posts/ue-cpp/axis-snap-movement/`。
+
+## 圖片與影片
+
+圖片用 Markdown 語法、相對路徑，建置時會自動壓縮成 webp；引號裡的文字會變成圖說：
+
+```markdown
+![替代文字](./setup_01_place.jpg "圖說")
+```
+
+影片用 HTML 的 `<video>`，同樣寫相對路徑，建置時會複製到文章網址旁邊：
+
+```html
+<video src="./demo_stairs.mp4" controls muted loop playsinline></video>
 ```
 
 ## Frontmatter
