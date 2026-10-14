@@ -228,7 +228,7 @@ Spline 控制點不足或切線無效時，退回使用箭頭方向。</p><hr />
 <li>只改輸入方向，不影響角色碰撞、移動速度與 Root Motion</li>
 </ul></section>]]></content>
     <author><name>Spartan</name></author>
-    <category term="UE C++"/>
+    <category term="Scene/Level Design Actor"/>
   </entry>
   <entry>
     <title>UPROPERTY / UFUNCTION 常用標記速查</title>
