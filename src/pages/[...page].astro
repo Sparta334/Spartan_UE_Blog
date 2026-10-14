@@ -27,7 +27,6 @@ const len = page.data.length;
 ---
 
 <MainGridLayout>
-	{page.currentPage === 1 && <SteamShowcase variant="row" class="mb-4 onload-animation" />}
 	{showCategoryBar && <CategoryBar />}
 	<PostPage page={page} />
 	<Pagination
@@ -35,4 +34,5 @@ const len = page.data.length;
 		page={page}
 		style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
 	/>
+	{page.currentPage === 1 && <SteamShowcase variant="row" class="mt-4 onload-animation" />}
 </MainGridLayout>
