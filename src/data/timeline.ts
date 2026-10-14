@@ -31,7 +31,7 @@ export const timelineData: TimelineItem[] = [
 			"一款日式和風輕無雙 ARPG，玩法風格類似《閃亂神樂系列 / SENRAN KAGURA Series》，有爽快的雜兵戰，也有些許強度的 Boss 戰。",
 		status: "目前已由發行商公布 Steam 頁面且附有 Demo，具體發售時間需諮詢發行商",
 		type: "project",
-		startDate: "2025-08-01",
+		startDate: "2025-10-22",
 		organization: "發行商：芒果派對",
 		links: [
 			{
