@@ -1662,12 +1662,10 @@ const profileStatsUnavailable = "統計不可用";
 	async function fetchSiteStats(isRetry = false) {
 		const containers = document.querySelectorAll(".umami-stats-container");
 
-		// oddmisc 未加载则等待重试
+		// oddmisc 未載入就等它的 ready 事件（腳本可能比這裡晚執行）
 		if (!window.oddmisc) {
 			if (!isRetry) {
-				setTimeout(() => fetchSiteStats(true), 500);
-			} else {
-				containers.forEach((c) => c.classList.add("hidden"));
+				window.addEventListener("oddmisc-ready", () => fetchSiteStats(true), { once: true });
 			}
 			return;
 		}
@@ -1676,12 +1674,6 @@ const profileStatsUnavailable = "統計不可用";
 			const stats = await window.oddmisc.getSiteStats();
 			const pageViews = stats.pageviews || 0;
 			const visits = stats.visits || 0;
-
-			// 数据为 0 时隐藏
-			if (pageViews === 0 && visits === 0) {
-				containers.forEach((c) => c.classList.add("hidden"));
-				return;
-			}
 
 			containers.forEach((c) => c.classList.remove("hidden"));
 			document.querySelectorAll(".site-stats-display").forEach((el) => {
@@ -1723,12 +1715,10 @@ const profileStatsUnavailable = "統計不可用";
 	async function fetchSiteStats(isRetry = false) {
 		const containers = document.querySelectorAll(".umami-stats-container");
 
-		// oddmisc 未加载则等待重试
+		// oddmisc 未載入就等它的 ready 事件（腳本可能比這裡晚執行）
 		if (!window.oddmisc) {
 			if (!isRetry) {
-				setTimeout(() => fetchSiteStats(true), 500);
-			} else {
-				containers.forEach((c) => c.classList.add("hidden"));
+				window.addEventListener("oddmisc-ready", () => fetchSiteStats(true), { once: true });
 			}
 			return;
 		}
@@ -1737,12 +1727,6 @@ const profileStatsUnavailable = "統計不可用";
 			const stats = await window.oddmisc.getSiteStats();
 			const pageViews = stats.pageviews || 0;
 			const visits = stats.visits || 0;
-
-			// 数据为 0 时隐藏
-			if (pageViews === 0 && visits === 0) {
-				containers.forEach((c) => c.classList.add("hidden"));
-				return;
-			}
 
 			containers.forEach((c) => c.classList.remove("hidden"));
 			document.querySelectorAll(".site-stats-display").forEach((el) => {
@@ -1784,12 +1768,10 @@ const profileStatsUnavailable = "統計不可用";
 	async function fetchSiteStats(isRetry = false) {
 		const containers = document.querySelectorAll(".umami-stats-container");
 
-		// oddmisc 未加载则等待重试
+		// oddmisc 未載入就等它的 ready 事件（腳本可能比這裡晚執行）
 		if (!window.oddmisc) {
 			if (!isRetry) {
-				setTimeout(() => fetchSiteStats(true), 500);
-			} else {
-				containers.forEach((c) => c.classList.add("hidden"));
+				window.addEventListener("oddmisc-ready", () => fetchSiteStats(true), { once: true });
 			}
 			return;
 		}
@@ -1798,12 +1780,6 @@ const profileStatsUnavailable = "統計不可用";
 			const stats = await window.oddmisc.getSiteStats();
 			const pageViews = stats.pageviews || 0;
 			const visits = stats.visits || 0;
-
-			// 数据为 0 时隐藏
-			if (pageViews === 0 && visits === 0) {
-				containers.forEach((c) => c.classList.add("hidden"));
-				return;
-			}
 
 			containers.forEach((c) => c.classList.remove("hidden"));
 			document.querySelectorAll(".site-stats-display").forEach((el) => {
@@ -1830,9 +1806,9 @@ const profileStatsUnavailable = "統計不可用";
         before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
         before:absolute before:-left-4 before:top-[5.5px]" style="" data-astro-cid-kcwuzsc3> 公告  </div> <div id="announcement" class="collapse-wrapper px-4 overflow-hidden" style="" data-astro-cid-kcwuzsc3>  <div> <!-- 公告栏内容 --> <div class="text-neutral-600 dark:text-neutral-300 leading-relaxed mb-3"> 歡迎來到我的 Unreal 技術筆記！ </div> <!-- 可选链接和关闭按钮 --> <div class="flex items-center justify-between gap-3"> <div> <a href="/Spartan_UE_Blog/about/" target="_self" class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform"> 關於我 </a> </div> <button class="btn-regular rounded-lg h-8 w-8 text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" onclick="closeAnnouncement()" aria-label="關閉"> <svg width="1em" height="1em" viewBox="0 0 640 640" class="text-sm" data-icon="fa7-solid:xmark">   <use href="#ai:fa7-solid:xmark"></use>  </svg> </button> </div> </div>  </div>  </widget-layout>  <widget-layout data-id="tags" data-is-collapsed="false" class="pb-4 card-base onload-animation" style="animation-delay: 250ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
         before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
-        before:absolute before:-left-4 before:top-[5.5px]" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3> 標籤  </div> <div id="tags" class="collapse-wrapper px-4 overflow-hidden" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3>  <div class="flex gap-2 flex-wrap"> <a href="/Spartan_UE_Blog/archive/?tag=C%2B%2B" aria-label="View all posts with the C++ tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  C++ </a><a href="/Spartan_UE_Blog/archive/?tag=GAS" aria-label="View all posts with the GAS tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  GAS </a><a href="/Spartan_UE_Blog/archive/?tag=Multiplayer" aria-label="View all posts with the Multiplayer tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Multiplayer </a><a href="/Spartan_UE_Blog/archive/?tag=Reflection" aria-label="View all posts with the Reflection tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Reflection </a><a href="/Spartan_UE_Blog/archive/?tag=Scene%20Design%20Actor" aria-label="View all posts with the Scene Design Actor tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Scene Design Actor </a><a href="/Spartan_UE_Blog/archive/?tag=UE5" aria-label="View all posts with the UE5 tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  UE5 </a> </div>  </div>  </widget-layout>  </div> </div> <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-4 sticky top-4 sidebar-sticky-column"> <div class="flex flex-col w-full gap-4 md:hidden"> <widget-layout data-id="music-sidebar-widget-qfzorlo" data-is-collapsed="undefined" class="pb-4 card-base onload-animation" style="animation-delay: 100ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
+        before:absolute before:-left-4 before:top-[5.5px]" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3> 標籤  </div> <div id="tags" class="collapse-wrapper px-4 overflow-hidden" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3>  <div class="flex gap-2 flex-wrap"> <a href="/Spartan_UE_Blog/archive/?tag=C%2B%2B" aria-label="View all posts with the C++ tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  C++ </a><a href="/Spartan_UE_Blog/archive/?tag=GAS" aria-label="View all posts with the GAS tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  GAS </a><a href="/Spartan_UE_Blog/archive/?tag=Multiplayer" aria-label="View all posts with the Multiplayer tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Multiplayer </a><a href="/Spartan_UE_Blog/archive/?tag=Reflection" aria-label="View all posts with the Reflection tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Reflection </a><a href="/Spartan_UE_Blog/archive/?tag=Scene%20Design%20Actor" aria-label="View all posts with the Scene Design Actor tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  Scene Design Actor </a><a href="/Spartan_UE_Blog/archive/?tag=UE5" aria-label="View all posts with the UE5 tag" class="btn-regular h-8 text-sm px-3 rounded-lg">  UE5 </a> </div>  </div>  </widget-layout>  </div> </div> <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-4 sticky top-4 sidebar-sticky-column"> <div class="flex flex-col w-full gap-4 md:hidden"> <widget-layout data-id="music-sidebar-widget-r06k05m" data-is-collapsed="undefined" class="pb-4 card-base onload-animation" style="animation-delay: 100ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
         before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
-        before:absolute before:-left-4 before:top-[5.5px]" style="" data-astro-cid-kcwuzsc3> 音樂播放器  </div> <div id="music-sidebar-widget-qfzorlo" class="collapse-wrapper px-4 overflow-hidden" style="" data-astro-cid-kcwuzsc3>  <astro-island uid="ZtYLkW" component-url="/Spartan_UE_Blog/_astro/SidebarMusicClient.CO4J0msB.js" component-export="default" renderer-url="/Spartan_UE_Blog/_astro/client.svelte.Clf7ZtLX.js" props="{}" ssr client="only" opts="{&quot;name&quot;:&quot;SidebarMusicClient&quot;,&quot;value&quot;:&quot;svelte&quot;}"></astro-island>  </div>  </widget-layout> <widget-layout data-id="categories" data-is-collapsed="false" class="pb-4 card-base onload-animation" style="animation-delay: 150ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
+        before:absolute before:-left-4 before:top-[5.5px]" style="" data-astro-cid-kcwuzsc3> 音樂播放器  </div> <div id="music-sidebar-widget-r06k05m" class="collapse-wrapper px-4 overflow-hidden" style="" data-astro-cid-kcwuzsc3>  <astro-island uid="ZtYLkW" component-url="/Spartan_UE_Blog/_astro/SidebarMusicClient.CO4J0msB.js" component-export="default" renderer-url="/Spartan_UE_Blog/_astro/client.svelte.Clf7ZtLX.js" props="{}" ssr client="only" opts="{&quot;name&quot;:&quot;SidebarMusicClient&quot;,&quot;value&quot;:&quot;svelte&quot;}"></astro-island>  </div>  </widget-layout> <widget-layout data-id="categories" data-is-collapsed="false" class="pb-4 card-base onload-animation" style="animation-delay: 150ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
         before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
         before:absolute before:-left-4 before:top-[5.5px]" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3> 分類  </div> <div id="categories" class="collapse-wrapper px-4 overflow-hidden" style="--collapsedHeight: 7.5rem;" data-astro-cid-kcwuzsc3> <a href="/Spartan_UE_Blog/archive/?category=Gameplay" aria-label="View all posts in the Gameplay category"> <button class="
             w-full
@@ -2100,9 +2076,9 @@ const lastPostDate = "2026-10-14T00:00:00.000Z";
         "> <div class="flex items-center justify-between relative mr-2"> <div class="overflow-hidden text-left whitespace-nowrap text-ellipsis"> UE C++ </div> <div class="transition px-2 h-7 ml-4 min-w-8 rounded-lg text-sm font-bold
                     text-(--btn-content) dark:text-(--deep-text)
                     bg-[oklch(0.95_0.025_var(--hue))] dark:bg-(--primary)
-                    flex items-center justify-center"> 1 </div> </div> </button> </a> </div>  </widget-layout> <widget-layout data-id="music-sidebar-widget-vtd4ram" data-is-collapsed="undefined" class="pb-4 card-base onload-animation" style="animation-delay: 100ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
+                    flex items-center justify-center"> 1 </div> </div> </button> </a> </div>  </widget-layout> <widget-layout data-id="music-sidebar-widget-9onoeuo" data-is-collapsed="undefined" class="pb-4 card-base onload-animation" style="animation-delay: 100ms" data-astro-cid-kcwuzsc3="true"> <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 flex items-center
         before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
-        before:absolute before:-left-4 before:top-[5.5px]" style="" data-astro-cid-kcwuzsc3> 音樂播放器  </div> <div id="music-sidebar-widget-vtd4ram" class="collapse-wrapper px-4 overflow-hidden" style="" data-astro-cid-kcwuzsc3>  <astro-island uid="ZtYLkW" component-url="/Spartan_UE_Blog/_astro/SidebarMusicClient.CO4J0msB.js" component-export="default" renderer-url="/Spartan_UE_Blog/_astro/client.svelte.Clf7ZtLX.js" props="{}" ssr client="only" opts="{&quot;name&quot;:&quot;SidebarMusicClient&quot;,&quot;value&quot;:&quot;svelte&quot;}"></astro-island>  </div>  </widget-layout>  </div> </div> </div> </div> </div> <main id="swup-container" class="transition-swup-fade overflow-hidden min-w-0 w-full col-span-1 row-start-1 row-end-2 md:col-start-2 md:col-end-3 lg:col-start-2 lg:col-end-3 transition-main" data-astro-cid-m6cpsp63> <div id="content-wrapper" class="onload-animation transition-leaving" data-astro-cid-m6cpsp63> <div id="page-overlay-data" data-title data-date data-category data-words data-is-post="false" data-is-home="true" data-wallpaper-mode="banner" class="hidden" data-astro-cid-m6cpsp63></div> <div class="card-base category-bar p-3 onload-animation" id="category-bar" data-home-path="/Spartan_UE_Blog/" data-archive-path="/Spartan_UE_Blog/archive/" data-astro-cid-rlsuwegp> <div class="category-bar-inner flex gap-2" data-astro-cid-rlsuwegp> <a href="/Spartan_UE_Blog/" class="category-pill text-sm px-2 py-1 rounded-lg shrink-0
+        before:absolute before:-left-4 before:top-[5.5px]" style="" data-astro-cid-kcwuzsc3> 音樂播放器  </div> <div id="music-sidebar-widget-9onoeuo" class="collapse-wrapper px-4 overflow-hidden" style="" data-astro-cid-kcwuzsc3>  <astro-island uid="ZtYLkW" component-url="/Spartan_UE_Blog/_astro/SidebarMusicClient.CO4J0msB.js" component-export="default" renderer-url="/Spartan_UE_Blog/_astro/client.svelte.Clf7ZtLX.js" props="{}" ssr client="only" opts="{&quot;name&quot;:&quot;SidebarMusicClient&quot;,&quot;value&quot;:&quot;svelte&quot;}"></astro-island>  </div>  </widget-layout>  </div> </div> </div> </div> </div> <main id="swup-container" class="transition-swup-fade overflow-hidden min-w-0 w-full col-span-1 row-start-1 row-end-2 md:col-start-2 md:col-end-3 lg:col-start-2 lg:col-end-3 transition-main" data-astro-cid-m6cpsp63> <div id="content-wrapper" class="onload-animation transition-leaving" data-astro-cid-m6cpsp63> <div id="page-overlay-data" data-title data-date data-category data-words data-is-post="false" data-is-home="true" data-wallpaper-mode="banner" class="hidden" data-astro-cid-m6cpsp63></div> <div class="card-base category-bar p-3 onload-animation" id="category-bar" data-home-path="/Spartan_UE_Blog/" data-archive-path="/Spartan_UE_Blog/archive/" data-astro-cid-rlsuwegp> <div class="category-bar-inner flex gap-2" data-astro-cid-rlsuwegp> <a href="/Spartan_UE_Blog/" class="category-pill text-sm px-2 py-1 rounded-lg shrink-0
 				   transition-colors duration-200 flex items-center justify-center" data-category-name="" aria-label="首頁" data-astro-cid-rlsuwegp> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-lg" data-astro-cid-rlsuwegp="true" data-icon="material-symbols:home">   <use href="#ai:material-symbols:home"></use>  </svg> </a> <a href="/Spartan_UE_Blog/archive/" class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap shrink-0
 				   transition-colors duration-200 flex items-center justify-center" data-category-name="__archive__" data-astro-cid-rlsuwegp> 文章 <span class="text-xs opacity-60 ml-1" data-astro-cid-rlsuwegp>3</span> </a> <div class="category-divider shrink-0" data-astro-cid-rlsuwegp></div> <div class="scroll-area relative" data-astro-cid-rlsuwegp> <div class="scroll-fade scroll-fade-left" aria-hidden="true" data-astro-cid-rlsuwegp></div> <div class="category-scroll flex gap-2 overflow-x-auto" data-astro-cid-rlsuwegp> <a href="/Spartan_UE_Blog/archive/?category=Gameplay" class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap
 								   transition-colors duration-200 flex items-center justify-center" data-category-name="Gameplay" data-astro-cid-rlsuwegp> Gameplay <span class="text-xs opacity-60 ml-1" data-astro-cid-rlsuwegp> 1 </span> </a><a href="/Spartan_UE_Blog/archive/?category=Scene%2FLevel%20Design%20Actor" class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap
@@ -2174,6 +2150,7 @@ Steam 個人檔案 <svg width="1em" height="1em" class="h-4 w-4" data-astro-cid-
         before:absolute
         before:top-8.75 before:left-4.5 before:hidden md:before:block" style="--coverWidth: 28%;" data-astro-cid-6ndnmo5q>  俯視角遊戲的「軸向吸附」移動：讓鍵盤也能順著樓梯走  <svg width="1em" height="1em" viewBox="0 0 24 24" class="inline text-[2rem] text-(--primary) md:hidden translate-y-0.5 absolute" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-(--primary) text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> </a> <div class="flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2 mb-4"> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:calendar-today-outline-rounded">   <use href="#ai:material-symbols:calendar-today-outline-rounded"></use>  </svg> </div> <span class="text-50 text-sm font-medium">2026-10-14</span> </div>  <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:book-2-outline-rounded">   <use href="#ai:material-symbols:book-2-outline-rounded"></use>  </svg> </div> <div class="flex flex-row flex-nowrap items-center"> <a href="/Spartan_UE_Blog/archive/?category=Scene%2FLevel%20Design%20Actor" aria-label="View all posts in the Scene/Level Design Actor category" class="link-lg transition text-50 text-sm font-medium hover:text-(--primary) dark:hover:text-(--primary) whitespace-nowrap"> Scene/Level Design Actor </a> </div> </div> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:article-outline-rounded">   <use href="#ai:material-symbols:article-outline-rounded"></use>  </svg> </div>  <span class="text-50 text-sm font-medium"> 2039  字 </span>  </div>     </div> <script>(function(){const pageViewsText = "瀏覽次數";
 const visitsText = "造訪次數";
+const baseUrl = "/Spartan_UE_Blog/";
 
     function generateStatsText(pageViews, visits) {
         return `${pageViewsText} ${pageViews} · ${visitsText} ${visits}`;
@@ -2183,8 +2160,9 @@ const visitsText = "造訪次數";
         const container = document.querySelector('.umami-page-views');
         if (!container) return;
 
+        // oddmisc 未載入就等它的 ready 事件
         if (!window.oddmisc) {
-            container.classList.add('hidden');
+            window.addEventListener('oddmisc-ready', fetchPageViews, { once: true });
             return;
         }
 
@@ -2192,14 +2170,9 @@ const visitsText = "造訪次數";
         if (!id) {return;}
 
         try {
-            const stats = await window.oddmisc.getStats(`/posts/${id}/`);
+            const stats = await window.oddmisc.getStats(`${baseUrl}posts/${id}/`);
             const pageViews = stats.pageviews || 0;
             const visits = stats.visits || 0;
-
-            if (pageViews === 0 && visits === 0) {
-                container.classList.add('hidden');
-                return;
-            }
 
             container.classList.remove('hidden');
             container.querySelector('.page-views-display').textContent = generateStatsText(pageViews, visits);
@@ -2227,6 +2200,7 @@ const visitsText = "造訪次數";
         before:absolute
         before:top-8.75 before:left-4.5 before:hidden md:before:block" style="--coverWidth: 28%;" data-astro-cid-6ndnmo5q>  UPROPERTY / UFUNCTION 常用標記速查  <svg width="1em" height="1em" viewBox="0 0 24 24" class="inline text-[2rem] text-(--primary) md:hidden translate-y-0.5 absolute" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-(--primary) text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> </a> <div class="flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2 mb-4"> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" class="text-xl" data-icon="material-symbols:calendar-today-outline-rounded">   <symbol id="ai:material-symbols:calendar-today-outline-rounded" viewBox="0 0 24 24"><path fill="currentColor" d="M5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V3q0-.425.288-.712T7 2t.713.288T8 3v1h8V3q0-.425.288-.712T17 2t.713.288T18 3v1h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22zm0-2h14V10H5zM5 8h14V6H5zm0 0V6z"/></symbol><use href="#ai:material-symbols:calendar-today-outline-rounded"></use>  </svg> </div> <span class="text-50 text-sm font-medium">2026-10-13</span> </div>  <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" class="text-xl" data-icon="material-symbols:book-2-outline-rounded">   <symbol id="ai:material-symbols:book-2-outline-rounded" viewBox="0 0 24 24"><path fill="currentColor" d="M6 15.325q.35-.175.725-.25T7.5 15H8V4h-.5q-.625 0-1.062.438T6 5.5zM10 15h8V4h-8zm-4 .325V4zM7.5 22q-1.45 0-2.475-1.025T4 18.5v-13q0-1.45 1.025-2.475T7.5 2H18q.825 0 1.413.587T20 4v12.525q0 .2-.162.363t-.588.362q-.35.175-.55.5t-.2.75t.2.763t.55.487t.55.413t.2.562v.25q0 .425-.288.725T19 22zm0-2h9.325q-.15-.35-.237-.712T16.5 18.5q0-.4.075-.775t.25-.725H7.5q-.65 0-1.075.438T6 18.5q0 .65.425 1.075T7.5 20"/></symbol><use href="#ai:material-symbols:book-2-outline-rounded"></use>  </svg> </div> <div class="flex flex-row flex-nowrap items-center"> <a href="/Spartan_UE_Blog/archive/?category=UE%20C%2B%2B" aria-label="View all posts in the UE C++ category" class="link-lg transition text-50 text-sm font-medium hover:text-(--primary) dark:hover:text-(--primary) whitespace-nowrap"> UE C++ </a> </div> </div> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" class="text-xl" data-icon="material-symbols:article-outline-rounded">   <symbol id="ai:material-symbols:article-outline-rounded" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V5H5zM5 5v14zm3 12h5q.425 0 .713-.288T14 16t-.288-.712T13 15H8q-.425 0-.712.288T7 16t.288.713T8 17m0-4h8q.425 0 .713-.288T17 12t-.288-.712T16 11H8q-.425 0-.712.288T7 12t.288.713T8 13m0-4h8q.425 0 .713-.288T17 8t-.288-.712T16 7H8q-.425 0-.712.288T7 8t.288.713T8 9"/></symbol><use href="#ai:material-symbols:article-outline-rounded"></use>  </svg> </div>  <span class="text-50 text-sm font-medium"> 219  字 </span>  </div>     </div> <script>(function(){const pageViewsText = "瀏覽次數";
 const visitsText = "造訪次數";
+const baseUrl = "/Spartan_UE_Blog/";
 
     function generateStatsText(pageViews, visits) {
         return `${pageViewsText} ${pageViews} · ${visitsText} ${visits}`;
@@ -2236,8 +2210,9 @@ const visitsText = "造訪次數";
         const container = document.querySelector('.umami-page-views');
         if (!container) return;
 
+        // oddmisc 未載入就等它的 ready 事件
         if (!window.oddmisc) {
-            container.classList.add('hidden');
+            window.addEventListener('oddmisc-ready', fetchPageViews, { once: true });
             return;
         }
 
@@ -2245,14 +2220,9 @@ const visitsText = "造訪次數";
         if (!id) {return;}
 
         try {
-            const stats = await window.oddmisc.getStats(`/posts/${id}/`);
+            const stats = await window.oddmisc.getStats(`${baseUrl}posts/${id}/`);
             const pageViews = stats.pageviews || 0;
             const visits = stats.visits || 0;
-
-            if (pageViews === 0 && visits === 0) {
-                container.classList.add('hidden');
-                return;
-            }
 
             container.classList.remove('hidden');
             container.querySelector('.page-views-display').textContent = generateStatsText(pageViews, visits);
@@ -2280,6 +2250,7 @@ const visitsText = "造訪次數";
         before:absolute
         before:top-8.75 before:left-4.5 before:hidden md:before:block" style="--coverWidth: 28%;" data-astro-cid-6ndnmo5q>  GAS 入門：ASC 要放在 Pawn 還是 PlayerState？  <svg width="1em" height="1em" viewBox="0 0 24 24" class="inline text-[2rem] text-(--primary) md:hidden translate-y-0.5 absolute" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-(--primary) text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0" data-astro-cid-6ndnmo5q="true" data-icon="material-symbols:chevron-right-rounded">   <use href="#ai:material-symbols:chevron-right-rounded"></use>  </svg> </a> <div class="flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2 mb-4"> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:calendar-today-outline-rounded">   <use href="#ai:material-symbols:calendar-today-outline-rounded"></use>  </svg> </div> <span class="text-50 text-sm font-medium">2026-10-12</span> </div>  <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:book-2-outline-rounded">   <use href="#ai:material-symbols:book-2-outline-rounded"></use>  </svg> </div> <div class="flex flex-row flex-nowrap items-center"> <a href="/Spartan_UE_Blog/archive/?category=Gameplay" aria-label="View all posts in the Gameplay category" class="link-lg transition text-50 text-sm font-medium hover:text-(--primary) dark:hover:text-(--primary) whitespace-nowrap"> Gameplay </a> </div> </div> <div class="flex items-center"> <div class="meta-icon"> <svg width="1em" height="1em" viewBox="0 0 24 24" class="text-xl" data-icon="material-symbols:article-outline-rounded">   <use href="#ai:material-symbols:article-outline-rounded"></use>  </svg> </div>  <span class="text-50 text-sm font-medium"> 108  字 </span>  </div>     </div> <script>(function(){const pageViewsText = "瀏覽次數";
 const visitsText = "造訪次數";
+const baseUrl = "/Spartan_UE_Blog/";
 
     function generateStatsText(pageViews, visits) {
         return `${pageViewsText} ${pageViews} · ${visitsText} ${visits}`;
@@ -2289,8 +2260,9 @@ const visitsText = "造訪次數";
         const container = document.querySelector('.umami-page-views');
         if (!container) return;
 
+        // oddmisc 未載入就等它的 ready 事件
         if (!window.oddmisc) {
-            container.classList.add('hidden');
+            window.addEventListener('oddmisc-ready', fetchPageViews, { once: true });
             return;
         }
 
@@ -2298,14 +2270,9 @@ const visitsText = "造訪次數";
         if (!id) {return;}
 
         try {
-            const stats = await window.oddmisc.getStats(`/posts/${id}/`);
+            const stats = await window.oddmisc.getStats(`${baseUrl}posts/${id}/`);
             const pageViews = stats.pageviews || 0;
             const visits = stats.visits || 0;
-
-            if (pageViews === 0 && visits === 0) {
-                container.classList.add('hidden');
-                return;
-            }
 
             container.classList.remove('hidden');
             container.querySelector('.page-views-display').textContent = generateStatsText(pageViews, visits);
