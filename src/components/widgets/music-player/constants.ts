@@ -11,14 +11,6 @@ const ytCover = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
 export const LOCAL_PLAYLIST: Song[] = [
 	{
-		id: 2,
-		title: "Bury the Light (Boss Edit)",
-		artist: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
-		cover: ytCover("g_93xQfRjEI"),
-		url: "assets/music/url/bury-the-light.mp3",
-		duration: 337,
-	},
-	{
 		id: 3,
 		title: "Another World",
 		artist: "控制：共振 原聲帶",
@@ -57,6 +49,14 @@ export const LOCAL_PLAYLIST: Song[] = [
 		cover: ytCover("yakOBIoyoik"),
 		url: "assets/music/url/alicia.mp3",
 		duration: 170,
+	},
+	{
+		id: 2,
+		title: "Bury the Light (Boss Edit)",
+		artist: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
+		cover: ytCover("g_93xQfRjEI"),
+		url: "assets/music/url/bury-the-light.mp3",
+		duration: 337,
 	},
 ];
 
