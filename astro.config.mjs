@@ -121,7 +121,7 @@ export default defineConfig({
 		postMedia(),
 		oddmisc({
 			umami: {
-				shareUrl: false,
+				shareUrl: "https://cloud.umami.is/share/jVUXeILpe7ayBZTk",
 			},
 		}),
 		swup({
