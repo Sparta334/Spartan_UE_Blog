@@ -103,7 +103,7 @@ export default defineConfig({
 		: [],
 
 	site: siteConfig.siteURL,
-	base: "/Spartan_UE_Blog/",
+	base: "/",
 	trailingSlash: "always",
 	compressHTML: true,
 

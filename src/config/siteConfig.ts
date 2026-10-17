@@ -6,7 +6,7 @@ const SITE_LANG = "zh_TW"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
 export const siteConfig: SiteConfig = {
 	title: "Spartan 的 Unreal 筆記",
 	subtitle: "Unreal Engine 技術研究紀錄",
-	siteURL: "https://sparta334.github.io/Spartan_UE_Blog/", // 请替换为你的站点URL，以斜杠结尾
+	siteURL: "https://spartan117.cc/", // 请替换为你的站点URL，以斜杠结尾
 	siteStartDate: "2026-10-13", // 站点开始运行日期，用于站点统计组件计算运行天数
 	timeZone: "Asia/Taipei", // 文章日期使用的 IANA 时区，可改为 Asia/Tokyo、Europe/Berlin 等
 
