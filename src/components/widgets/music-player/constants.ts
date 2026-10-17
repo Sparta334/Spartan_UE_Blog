@@ -42,6 +42,30 @@ export const LOCAL_PLAYLIST: Song[] = [
 		url: "assets/music/url/manalan-mailla.mp3",
 		duration: 155,
 	},
+	{
+		id: 5,
+		title: "Beyond Light",
+		artist: "Destiny 2: Beyond Light 原聲帶",
+		cover: ytCover("FOo7On4XHV8"),
+		url: "assets/music/url/beyond-light.mp3",
+		duration: 202,
+	},
+	{
+		id: 6,
+		title: "Delicate Weapon",
+		artist: "Grimes",
+		cover: ytCover("KTJQiGRQS8Q"),
+		url: "assets/music/url/delicate-weapon.mp3",
+		duration: 230,
+	},
+	{
+		id: 7,
+		title: "Alicia",
+		artist: "Lorien Testard",
+		cover: ytCover("yakOBIoyoik"),
+		url: "assets/music/url/alicia.mp3",
+		duration: 170,
+	},
 ];
 
 export const DEFAULT_SONG: Song = {
