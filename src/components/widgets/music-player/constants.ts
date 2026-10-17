@@ -11,14 +11,6 @@ const ytCover = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
 export const LOCAL_PLAYLIST: Song[] = [
 	{
-		id: 1,
-		title: "三味線ロックの夜",
-		artist: "Samurai Beat",
-		cover: ytCover("To_1NZulJvE"),
-		url: "assets/music/url/shamisen-rock-night.mp3",
-		duration: 236,
-	},
-	{
 		id: 2,
 		title: "Bury the Light (Boss Edit)",
 		artist: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
