@@ -133,12 +133,10 @@ import TypewriterText from "../../atoms/typewriter-text/TypewriterText.astro";
 	async function fetchSiteStats(isRetry = false) {
 		const containers = document.querySelectorAll(".umami-stats-container");
 
-		// oddmisc 未加载则等待重试
+		// oddmisc 未載入就等它的 ready 事件（腳本可能比這裡晚執行）
 		if (!window.oddmisc) {
 			if (!isRetry) {
-				setTimeout(() => fetchSiteStats(true), 500);
-			} else {
-				containers.forEach((c) => c.classList.add("hidden"));
+				window.addEventListener("oddmisc-ready", () => fetchSiteStats(true), { once: true });
 			}
 			return;
 		}
@@ -147,12 +145,6 @@ import TypewriterText from "../../atoms/typewriter-text/TypewriterText.astro";
 			const stats = await window.oddmisc.getSiteStats();
 			const pageViews = stats.pageviews || 0;
 			const visits = stats.visits || 0;
-
-			// 数据为 0 时隐藏
-			if (pageViews === 0 && visits === 0) {
-				containers.forEach((c) => c.classList.add("hidden"));
-				return;
-			}
 
 			containers.forEach((c) => c.classList.remove("hidden"));
 			document.querySelectorAll(".site-stats-display").forEach((el) => {

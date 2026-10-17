@@ -113,7 +113,8 @@ const {
 
 <script is:inline define:vars={{
     pageViewsText: i18n(I18nKey.profileStatsPageViews),
-    visitsText: i18n(I18nKey.profileStatsVisits)
+    visitsText: i18n(I18nKey.profileStatsVisits),
+    baseUrl: import.meta.env.BASE_URL
 }}>
     function generateStatsText(pageViews, visits) {
         return `${pageViewsText} ${pageViews} · ${visitsText} ${visits}`;
@@ -123,8 +124,9 @@ const {
         const container = document.querySelector('.umami-page-views');
         if (!container) return;
 
+        // oddmisc 未載入就等它的 ready 事件
         if (!window.oddmisc) {
-            container.classList.add('hidden');
+            window.addEventListener('oddmisc-ready', fetchPageViews, { once: true });
             return;
         }
 
@@ -132,14 +134,9 @@ const {
         if (!id) {return;}
 
         try {
-            const stats = await window.oddmisc.getStats(`/posts/${id}/`);
+            const stats = await window.oddmisc.getStats(`${baseUrl}posts/${id}/`);
             const pageViews = stats.pageviews || 0;
             const visits = stats.visits || 0;
-
-            if (pageViews === 0 && visits === 0) {
-                container.classList.add('hidden');
-                return;
-            }
 
             container.classList.remove('hidden');
             container.querySelector('.page-views-display').textContent = generateStatsText(pageViews, visits);
