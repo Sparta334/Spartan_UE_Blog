@@ -1,8 +1,11 @@
-![DreamStrikers](./logo.png)
+![DreamStrikers](./capsule.jpg)
 
 受到萬代南夢宮《火影忍者 終極風暴》系列與《Jump Force》啟發，試著製作一款可以輕鬆上手的 3D 格鬥動作遊戲。這頁整理我在專案裡負責與設計的主要系統：格鬥鏡頭、角色狀態機與戰鬥系統、線上對戰架構，以及開發工具。
 
-![DreamStrikers 標題畫面](./concept.png "標題畫面")
+<div align="center">
+<video src="./gameplay.mp4" controls playsinline preload="metadata" width="100%"></video>
+<br><em>實機遊玩：對戰、魂技與終結技</em>
+</div>
 
 :::tip
 目前獨立製作中，已在 Steam 推出 Demo，規劃未來轉為免費遊玩。[前往 Steam 頁面](https://store.steampowered.com/app/3183230/_/)
@@ -17,7 +20,7 @@ DreamStrikers（專案代號 Fightet）是以 Unreal Engine 5.8 開發的 3D 對
 | 引擎 | Unreal Engine 5.8（C++ 模組 `Fightet` + Blueprint） |
 | 可玩角色 | KAI、LITO、RAIN、ICE（角色清單由 `UMS_GameInstance.Player List` 管理） |
 | 遊戲模式 | 本機雙人、街機（含 AI）、練習、線上房間（2 名戰鬥者 + 最多 6 名觀戰） |
-| 核心系統 | 雙人格鬥鏡頭、Soul 魂系統（魂技 1–4、覺醒、終結技 Final）、追擊／閃避（FFC）、QTE 必殺演出 |
+| 核心系統 | 雙人格鬥鏡頭、Soul 魂系統（魂技 1–4、覺醒、終結技 Final）、追擊／閃避（FFC）、終結技演出 |
 | 角色狀態機 | GBW Powerful State（StateTree 驅動）+ Gameplay Abilities |
 | 線上 | SteamCorePro + Online Subsystem Sessions，伺服器權威的回合流程 |
 | 輸入 | Enhanced Input（`IMC_Fighter` / `IMC_FighterP2`），支援 DualShock 與震動回饋 |
@@ -33,6 +36,14 @@ DreamStrikers（專案代號 Fightet）是以 Unreal Engine 5.8 開發的 3D 對
 | `Menu/` | 主選單場景：標題鏡頭區域、背景飛行交通 |
 | `BattleContent/` | Blueprint 函式庫的 C++ 基底 |
 
+### 角色
+
+![角色選擇畫面](./char-select.jpg "角色選擇")
+
+![LITO](./intro-lito.jpg "LITO")
+![RAIN](./intro-rain.jpg "RAIN")
+![ICE](./intro-ice.jpg "ICE")
+
 ## 程式架構
 
 架構的核心是「伺服器決定比賽、每台機器自己演出」。GameMode 只在伺服器跑回合流程，把結果寫進同步的 GameState。每台機器上的 Battle Director 把狀態變化轉成 HUD、鏡頭與角色事件。
@@ -44,6 +55,11 @@ DreamStrikers（專案代號 Fightet）是以 Unreal Engine 5.8 開發的 3D 對
 ## 鏡頭系統：仿「究極風暴」的 3D 格鬥鏡頭
 
 鏡頭的設計目標是「永遠從自己角色背後、斜向看向兩人中點」，讓玩家在自由 3D 場地中仍能同時看清自己與對手。實作上不另外生成攝影機，而是直接驅動角色身上的 SpringArm（彈簧臂）與 Camera，由 `AFightetBattlePlayerController::PlayerTick` 每幀更新。線上對戰時每台機器各自跑一份鏡頭，焦點是自己的角色；觀戰者跟隨 P1。
+
+<div align="center">
+<video src="./camera-demo.mp4" controls autoplay muted loop playsinline preload="metadata" width="100%"></video>
+<br><em>鏡頭系統成品：Default 繞圈追蹤、命中後切入 Flatting 側面視角、魂技特寫</em>
+</div>
 
 鏡頭分成三種模式（`E_BattleCameraMode`），另外保留「凍結」值給特定招式接管鏡頭。模式切換不在呼叫當下生效，而是寫入 `TargetCameraMode`，下一幀才套用，避免同一幀內多個系統互相覆蓋。
 
@@ -93,6 +109,11 @@ $$
 
 計時的設計和線上同步密切相關，見「網路與線上對戰」。勝利動畫使用同一套方法，另外多綁一個 `Player` 標籤給贏家。
 
+<div align="center">
+<video src="./soul-skill-lito.mp4" controls playsinline preload="metadata" width="100%"></video>
+<br><em>LITO 魂技特寫：Level Sequence 運鏡（編輯器內預覽）</em>
+</div>
+
 ### 本機雙人鏡頭：Switch Focus
 
 本機對戰兩名玩家共用一個畫面，鏡頭一次只能跟一個人。`BP_BattleGameMode` 的做法是讓鏡頭「切換焦點」到比較靠近鏡頭的那位角色：
@@ -132,6 +153,11 @@ $$
 ## 戰鬥系統
 
 戰鬥是資料驅動的：每個角色是一個 GBW Powerful State 模板，包含一棵 StateTree、一組陣營設定和一組初始屬性，全部寫在 `DefaultGBW.ini`。新增角色主要是新增資料和狀態樹，不必改動共用的角色基底 `BP_PH_CharacterBase`。玩家與 AI 共用同一角色，只換 StateTree（例如 `ST_PH_LITO` 與 `ST_PH_V_AI-LITO` + `GBW_ST_AI`）。
+
+![對戰畫面](./battle-1.jpg)
+![對戰畫面](./battle-2.jpg)
+![魂技命中](./battle-3.jpg)
+![連段與破防](./battle-4.jpg)
 
 ### 角色狀態樹（StateTree）
 
@@ -199,17 +225,22 @@ $$
 
 連段最後一擊會加上擊飛 Buff。
 
-### 終結技（Final）與 QTE
+### 終結技（Final）
 
 覺醒與終結技是一條連續的流程：
 
 1. **覺醒：** 魂量足夠時 UI 會提示可以覺醒（`CheckPlayerCanAwakeAnHint`）。覺醒由 `STT_Awaking` 啟動，攻擊力與魂技傷害 +50%。
-2. **覺醒消耗：** 覺醒期間 `AwakeEnegy` 由計時器持續扣減，同步到戰鬥 UI 的覺醒條（`Awake Fade`）。
-3. **解鎖終結技：** `STC_SoulFinalCondition` 的條件是「`AwakeEnegy` ≤ 0」且「對手血量低於 50%」。條件成立時 UI 提示可以終結（`Hint Player Can Final`）。
-4. **發動：** `STT_FinalAttackLaunch` 發動終結技，參數來自 `SoulFinalData` 資料表。
-5. **演出：** `SoulKill Progress Handle` 把兩名角色移到場景中預設的必殺技位置（`SpecialMMovesLocatedPoint`）並面對面，生成專用鏡頭，用 `SetBindingByTag` 把兩人與鏡頭綁進 Level Sequence 播放。
+2. **解鎖終結技：** `STC_SoulFinalCondition` 同時檢查三個條件：自己**處於覺醒狀態**、**對手血量 ≤ 50%**、**Soul 達到第 4 階段**。三者都成立時，UI 提示可以終結（`Hint Player Can Final`）。
+3. **發動：** `STT_FinalAttackLaunch` 發動終結技，參數來自 `SoulFinalData` 資料表。
+4. **演出：** `SoulKill Progress Handle` 把兩名角色移到場景中預設的必殺技位置（`SpecialMMovesLocatedPoint`）並面對面，生成專用鏡頭，用 `SetBindingByTag` 把兩人與鏡頭綁進 Level Sequence 播放。
 
-終結技播放期間回合計時暫停，但是只要命中並撥放完終結動畫即獲得勝利
+終結技播放期間回合計時暫停，但是只要命中並撥放完終結動畫即獲得勝利。
+
+![RAIN 終結技](./final-rain-1.jpg "RAIN 終結技")
+![RAIN 終結技](./final-rain-2.jpg "RAIN 終結技")
+
+![KAI 終結技](./final-kai-1.jpg "KAI 終結技")
+![KAI 終結技](./final-kai-2.jpg "KAI 終結技")
 
 ### 回合流程
 
@@ -232,6 +263,10 @@ AI 和玩家用同一個角色藍圖，只是換了 StateTree（`GBW_ST_AI`）�
 ## 網路與線上對戰
 
 線上模式是「房間制 Listen Server」：房主同時是伺服器，兩名玩家戰鬥，其餘人依排隊順序觀戰。傳輸層是 SteamCore Sockets NetDriver（失敗時退回 IpNetDriver）。這個模式最大的挑戰是：原本的本機對戰全部寫在 Blueprint 的 `BP_BattleGameMode`，而 GameMode 在線上只存在於伺服器。
+
+![建立房間](./online-room.jpg "建立房間")
+![線上對戰（房主 P1 視角）](./online-battle.jpg "線上對戰")
+![線上結算](./online-result.jpg "線上結算畫面")
 
 ### 關鍵設計：Battle Director 橋接層
 
@@ -289,4 +324,8 @@ AI 和玩家用同一個角色藍圖，只是換了 StateTree（`GBW_ST_AI`）�
 
 ## 美術風格
 
-![DreamStrikers 場景中的海報與標語設計](./posters.png "場景中的海報與標語設計")
+![DreamStrikers 標題畫面](./concept.png "標題畫面")
+
+![場景](./stage-bg.jpg "場景")
+
+![DreamStrikers 場景中的海報與標語設計](./posters.jpg "場景中的海報與標語設計")
