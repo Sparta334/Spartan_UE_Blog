@@ -17,7 +17,7 @@ DreamStrikers（專案代號 Fightet）是以 Unreal Engine 5.8 開發的 3D 對
 | 引擎 | Unreal Engine 5.8（C++ 模組 `Fightet` + Blueprint） |
 | 可玩角色 | KAI、LITO、RAIN、ICE（角色清單由 `UMS_GameInstance.Player List` 管理） |
 | 遊戲模式 | 本機雙人、街機（含 AI）、練習、線上房間（2 名戰鬥者 + 最多 6 名觀戰） |
-| 核心系統 | 雙人格鬥鏡頭、Soul 魂系統（魂技 1–4、覺醒、終結技 Final）、追擊／閃避（FFC）、QTE 必殺演出 |
+| 核心系統 | 雙人格鬥鏡頭、Soul 魂系統（魂技 1–4、覺醒、終結技 Final）、追擊／閃避（FFC） |
 | 角色狀態機 | GBW Powerful State（StateTree 驅動）+ Gameplay Abilities |
 | 線上 | SteamCorePro + Online Subsystem Sessions，伺服器權威的回合流程 |
 | 輸入 | Enhanced Input（`IMC_Fighter` / `IMC_FighterP2`），支援 DualShock 與震動回饋 |
@@ -199,17 +199,17 @@ $$
 
 連段最後一擊會加上擊飛 Buff。
 
-### 終結技（Final）與 QTE
+### 終結技（Final）
 
 覺醒與終結技是一條連續的流程：
 
 1. **覺醒：** 魂量足夠時 UI 會提示可以覺醒（`CheckPlayerCanAwakeAnHint`）。覺醒由 `STT_Awaking` 啟動，攻擊力與魂技傷害 +50%。
 2. **覺醒消耗：** 覺醒期間 `AwakeEnegy` 由計時器持續扣減，同步到戰鬥 UI 的覺醒條（`Awake Fade`）。
-3. **解鎖終結技：** `STC_SoulFinalCondition` 的條件是「`AwakeEnegy` ≤ 0」且「對手血量低於 50%」。條件成立時 UI 提示可以終結（`Hint Player Can Final`）。
+3. **解鎖終結技：** `STC_SoulFinalCondition` 的條件是同時滿足「處於覺醒狀態」、「對手血量 ≤ 50%」與「魂技操作進入第 4 階段（`SoulOperation` = 4）」。條件成立時 UI 提示可以終結（`Hint Player Can Final`）。
 4. **發動：** `STT_FinalAttackLaunch` 發動終結技，參數來自 `SoulFinalData` 資料表。
 5. **演出：** `SoulKill Progress Handle` 把兩名角色移到場景中預設的必殺技位置（`SpecialMMovesLocatedPoint`）並面對面，生成專用鏡頭，用 `SetBindingByTag` 把兩人與鏡頭綁進 Level Sequence 播放。
 
-終結技播放期間回合計時暫停，但是只要命中並撥放完終結動畫即獲得勝利
+終結技播放期間回合計時暫停，只要命中並播放完終結動畫即獲得勝利。
 
 ### 回合流程
 
