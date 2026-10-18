@@ -197,7 +197,7 @@ $$
 - **D_Break：** 帶有 D_Break 屬性時，下一次打在對方武器上會直接擊破防禦。
 - **O_Break：** 帶有 O_Break 屬性時可以開「金鐘罩」霸體，角色套上疊加材質作為視覺提示，由計時器自動解除。
 
-連段最後一擊會加上擊飛 Buff。專案早期的「主動破防系統」已在註解中標為廢棄。
+連段最後一擊會加上擊飛 Buff。
 
 ### 終結技（Final）與 QTE
 
@@ -205,12 +205,11 @@ $$
 
 1. **覺醒：** 魂量足夠時 UI 會提示可以覺醒（`CheckPlayerCanAwakeAnHint`）。覺醒由 `STT_Awaking` 啟動，攻擊力與魂技傷害 +50%。
 2. **覺醒消耗：** 覺醒期間 `AwakeEnegy` 由計時器持續扣減，同步到戰鬥 UI 的覺醒條（`Awake Fade`）。
-3. **解鎖終結技：** `STC_SoulFinalCondition` 的條件是「`AwakeEnegy` ≤ 0」且「對手血量低於 20%」。條件成立時 UI 提示可以終結（`Hint Player Can Final`）。
+3. **解鎖終結技：** `STC_SoulFinalCondition` 的條件是「`AwakeEnegy` ≤ 0」且「對手血量低於 50%」。條件成立時 UI 提示可以終結（`Hint Player Can Final`）。
 4. **發動：** `STT_FinalAttackLaunch` 發動終結技，參數來自 `SoulFinalData` 資料表。
 5. **演出：** `SoulKill Progress Handle` 把兩名角色移到場景中預設的必殺技位置（`SpecialMMovesLocatedPoint`）並面對面，生成專用鏡頭，用 `SetBindingByTag` 把兩人與鏡頭綁進 Level Sequence 播放。
-6. **QTE：** `W_QuickTimeEvent` 依玩家當下的輸入裝置顯示對應按鍵圖示，進度條用 `MapRangeClamped` 把剩餘時間映射成縮放動畫。兩人的 `Soul Kill Finish` 結果決定演出走向。
 
-終結技播放期間回合計時暫停，最多 10 秒後自動恢復。
+終結技播放期間回合計時暫停，但是只要命中並撥放完終結動畫即獲得勝利
 
 ### 回合流程
 
