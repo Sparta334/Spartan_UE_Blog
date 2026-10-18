@@ -49,7 +49,13 @@ const specCollection = defineCollection({
 	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/spec" }),
 	schema: z.object({}),
 });
+// 專案介紹頁：一個專案一個資料夾 src/content/projects/<id>/index.md，id 要和 projects.ts 裡的 id 一樣
+const projectsCollection = defineCollection({
+	loader: glob({ pattern: "**/index.{md,mdx}", base: "./src/content/projects", generateId: ({ entry }) => entry.split("/")[0] }),
+	schema: z.object({}),
+});
 export const collections = {
+	projects: projectsCollection,
 	posts: postsCollection,
 	spec: specCollection,
 };

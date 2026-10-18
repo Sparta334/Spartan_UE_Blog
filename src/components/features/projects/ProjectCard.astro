@@ -1,5 +1,8 @@
 ---
+import { getEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
+
+import { url } from "@/utils/url-utils";
 
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
@@ -12,6 +15,8 @@ const hasImage = !!project.image;
 const showImageArea = project.showImage !== false && hasImage;
 const hasVisitUrl = !!project.visitUrl;
 const hasSourceCode = !!project.sourceCode;
+// src/content/projects/<id>/index.md 存在時才有介紹頁
+const detailUrl = (await getEntry("projects", project.id)) ? url(`/projects/${project.id}/`) : undefined;
 
 const getStatusText = (status: string) => {
 	switch (status) {
@@ -100,8 +105,17 @@ const getStatusText = (status: string) => {
 		}
 
 		{
-			(hasVisitUrl || hasSourceCode) && (
+			(detailUrl || hasVisitUrl || hasSourceCode) && (
 				<div class="flex gap-2">
+					{detailUrl && (
+						<a
+							href={detailUrl}
+							class="btn-regular flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+						>
+							<Icon name="material-symbols:article-outline" class="text-base w-4 h-4" />
+							專案介紹
+						</a>
+					)}
 					{hasVisitUrl && (
 						<a
 							href={project.visitUrl!}

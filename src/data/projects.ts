@@ -6,7 +6,7 @@ export interface Project {
 	title: string;
 	description: string;
 	image: string;
-	category: "web" | "mobile" | "desktop" | "other";
+	category: string;
 	techStack: string[];
 	status: "completed" | "in-progress" | "planned";
 	liveDemo?: string;
@@ -20,7 +20,22 @@ export interface Project {
 }
 
 // 專案資料：新增專案就在陣列裡加一個 { ... } 區塊，欄位見上面的 Project
-export const projectsData: Project[] = [];
+// 有介紹頁的專案：在 src/content/projects/<id>/index.md 寫內容，卡片會自動出現「專案介紹」按鈕
+export const projectsData: Project[] = [
+	{
+		id: "dreamstrikers",
+		title: "DreamStrikers",
+		description:
+			"受《火影忍者 終極風暴》與《Jump Force》啟發的 3D 對戰格鬥遊戲，支援本機、街機、練習與 Steam 線上房間對戰。",
+		image: "assets/projects/dreamstrikers/cover.webp",
+		category: "遊戲",
+		techStack: ["Unreal Engine 5", "C++", "Blueprint", "StateTree", "Steam 線上"],
+		status: "in-progress",
+		visitUrl: "https://store.steampowered.com/app/3183230/_/",
+		startDate: "2024-09-01",
+		featured: true,
+	},
+];
 
 // Get project statistics
 export const getProjectStats = () => {
