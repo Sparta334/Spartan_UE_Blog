@@ -1,5 +1,5 @@
 ---
-import { url } from "@/utils/url-utils";
+import { resolveAssetUrl } from "@/utils/asset-url";
 import type { PioConfig } from "@/types/config";
 
 interface Props {
@@ -61,7 +61,7 @@ const isRight = config.position === "right";
 
 <iframe
 	id="l2d-iframe"
-	src={url("/pio/live2d-host.html")}
+	src={resolveAssetUrl("/pio/live2d-host.html")}
 	allowtransparency="true"
 	style={"position: fixed; z-index: 999; pointer-events: none; border: none; bottom: 0;"
 		+ (isRight ? " right: 0;" : " left: 0;")

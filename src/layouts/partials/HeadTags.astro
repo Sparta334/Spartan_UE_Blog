@@ -15,7 +15,7 @@ import {
 } from "../../constants/constants";
 import { defaultFavicons } from "../../constants/icon";
 import type { Favicon } from "../../types/config";
-import { url } from "../../utils/url-utils";
+import { resolveAssetUrl } from "../../utils/asset-url";
 
 interface Props {
 	// SEO
@@ -87,7 +87,7 @@ const favicons: Favicon[] =
 	favicons.map((favicon) => (
 		<link
 			rel="icon"
-			href={favicon.src.startsWith("/") ? url(favicon.src) : favicon.src}
+			href={resolveAssetUrl(favicon.src)}
 			sizes={favicon.sizes}
 			media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
 		/>

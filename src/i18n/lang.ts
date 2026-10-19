@@ -40,3 +40,9 @@ export function switchLangPath(
 		: pathname.replace(/^\//, "");
 	return LANG_BASES[to] + rest;
 }
+
+// 圖片、音樂、影片等靜態檔案只放一份在網站根目錄，英文版直接共用，不另外複製
+// 開發伺服器（pnpm dev:en）只在自己的 base 底下提供檔案，所以開發時照用 BASE_URL
+export const ASSET_BASE: string = import.meta.env?.DEV
+	? import.meta.env.BASE_URL
+	: LANG_BASES.zh_TW;

@@ -4,6 +4,7 @@ import { Icon } from "astro-icon/components";
 import { navBarConfig, siteConfig } from "../../../config";
 import { LinkPresets } from "../../../constants/link-presets";
 import { LinkPreset, type NavBarLink } from "../../../types/config";
+import { resolveAssetUrl } from "../../../utils/asset-url";
 import { url } from "../../../utils/url-utils";
 import LanguageSwitch from "../../control/LanguageSwitch.astro";
 import ThemeSwitch from "../../control/ThemeSwitch.svelte";
@@ -78,14 +79,14 @@ const rawLogo = siteConfig.navbarTitle?.logo;
 const logoSrc = rawLogo?.match(/^(http|https|\/\/)/)
 	? rawLogo
 	: rawLogo
-		? url(rawLogo)
+		? resolveAssetUrl(rawLogo)
 		: "";
 
 const rawIcon = siteConfig.navbarTitle?.icon;
 const iconSrc = rawIcon?.match(/^(http|https|\/\/)/)
 	? rawIcon
 	: rawIcon
-		? url(rawIcon)
+		? resolveAssetUrl(rawIcon)
 		: "";
 
 const isLogoExternal = rawLogo?.match(/^(http|https|\/\/)/);

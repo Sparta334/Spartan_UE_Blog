@@ -11,6 +11,7 @@ import { projectsData } from "../data/projects";
 import I18nKey from "../i18n/i18nKey";
 import { byLang } from "../i18n/lang";
 import { i18n } from "../i18n/translation";
+import { resolveAssetUrl } from "@/utils/asset-url";
 
 if (!siteConfig.featurePages.projects) {
 	return Astro.redirect(`${import.meta.env.BASE_URL}404/`);
@@ -81,7 +82,7 @@ const subtitle = i18n(I18nKey.projectsSubtitle);
 		});
 	</script>
 
-	<script is:inline src={`${import.meta.env.BASE_URL}js/filter-tabs-handler.js`}></script>
+	<script is:inline src={resolveAssetUrl("js/filter-tabs-handler.js")}></script>
 
 	<div
 		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
