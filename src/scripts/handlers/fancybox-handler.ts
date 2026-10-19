@@ -32,6 +32,8 @@ export class FancyboxHandler {
 			return;
 		}
 
+		this.syncImageGridLinks();
+
 		// 按需加载 Fancybox 模块
 		if (!this.Fancybox) {
 			await this.loadFancybox();
@@ -56,6 +58,20 @@ export class FancyboxHandler {
 			document.querySelector(FANCYBOX_SELECTORS.albumLinks) !== null ||
 			document.querySelector(FANCYBOX_SELECTORS.singleFancybox) !== null
 		);
+	}
+
+	/**
+	 * 图片网格的链接在 Markdown 阶段写入的是原始相对路径，
+	 * 构建后图片被优化到 /_astro/，因此改为指向实际渲染的图片
+	 */
+	private syncImageGridLinks(): void {
+		document
+			.querySelectorAll<HTMLAnchorElement>("a.image-grid__link")
+			.forEach((link) => {
+				const img = link.querySelector("img");
+				const src = img?.getAttribute("src");
+				if (src) link.href = src;
+			});
 	}
 
 	/**
