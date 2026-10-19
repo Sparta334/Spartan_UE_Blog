@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { ASSET_BASE } from "../i18n/lang";
+import { ASSET_BASE } from "./asset-url";
 
 const imageFiles = import.meta.glob<ImageMetadata>(
 	"../**/*.{avif,gif,jpeg,jpg,png,svg,webp}",
@@ -18,7 +18,7 @@ export function isRemoteImageSource(src: string): boolean {
 export function publicImageUrl(src: string): string {
 	if (isRemoteImageSource(src)) return src;
 	if (!src.startsWith("/")) return src;
-	// 靜態檔案共用根目錄那一份（見 src/i18n/lang.ts 的 ASSET_BASE）
+	// 靜態檔案共用根目錄那一份（見 asset-url.ts 的 ASSET_BASE）
 	const base = ASSET_BASE.replace(/\/$/, "");
 	return `${base}${src}` || "/";
 }
