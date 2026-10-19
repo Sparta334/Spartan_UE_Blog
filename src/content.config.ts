@@ -1,11 +1,68 @@
 import { defineCollection } from "astro:content";
+import { readdirSync } from "node:fs";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
+import { slug as githubSlug } from "github-slugger";
 
+import { SITE_LANG } from "./i18n/lang";
 import { postGlob } from "./loaders/post-loader";
 
+// 英文翻譯放在同一個資料夾，檔名加 .en，例如 index.md 的英文版是 index.en.md
+// 繁中版：pattern 本身就排除 .en 檔
+// 英文版：列出實際要讀的檔案，有 .en 翻譯的用翻譯取代原文，沒有的沿用中文原文
+const TRANSLATION_FILE = /\.en\.(md|mdx)$/;
+
+function localizedPattern(
+	base: string,
+	pattern: string,
+	entryFile: RegExp,
+): string | string[] {
+	if (SITE_LANG !== "en") {
+		return pattern;
+	}
+	const files = readdirSync(base, { recursive: true, encoding: "utf8" }).map(
+		(file) => file.replaceAll("\\", "/"),
+	);
+	const translated = new Set(
+		files.filter((file) => TRANSLATION_FILE.test(file)),
+	);
+	return files.filter(
+		(file) =>
+			entryFile.test(file.replace(TRANSLATION_FILE, ".$1")) &&
+			(TRANSLATION_FILE.test(file) ||
+				!translated.has(file.replace(/\.(md|mdx)$/, ".en.$1"))),
+	);
+}
+
+// 和 Astro 預設的 id 規則相同，只是先去掉 .en，讓兩種語言的網址一致
+function localizedId({
+	entry,
+	data,
+}: {
+	entry: string;
+	data: Record<string, unknown>;
+}): string {
+	if (typeof data.slug === "string") {
+		return data.slug;
+	}
+	return entry
+		.replace(/(\.en)?\.(md|mdx)$/, "")
+		.split("/")
+		.map((segment) => githubSlug(segment))
+		.join("/")
+		.replace(/\/index$/, "");
+}
+
 const postsCollection = defineCollection({
-	loader: postGlob({ pattern: "**/*.{md,mdx}", base: "./src/content/posts" }),
+	loader: postGlob({
+		pattern: localizedPattern(
+			"./src/content/posts",
+			"**/!(*.en).{md,mdx}",
+			/\.(md|mdx)$/,
+		),
+		base: "./src/content/posts",
+		generateId: localizedId,
+	}),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),
@@ -46,12 +103,28 @@ const postsCollection = defineCollection({
 	}),
 });
 const specCollection = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/spec" }),
+	loader: glob({
+		pattern: localizedPattern(
+			"./src/content/spec",
+			"**/!(*.en).{md,mdx}",
+			/\.(md|mdx)$/,
+		),
+		base: "./src/content/spec",
+		generateId: localizedId,
+	}),
 	schema: z.object({}),
 });
 // 專案介紹頁：一個專案一個資料夾 src/content/projects/<id>/index.md，id 要和 projects.ts 裡的 id 一樣
 const projectsCollection = defineCollection({
-	loader: glob({ pattern: "**/index.{md,mdx}", base: "./src/content/projects", generateId: ({ entry }) => entry.split("/")[0] }),
+	loader: glob({
+		pattern: localizedPattern(
+			"./src/content/projects",
+			"**/index.{md,mdx}",
+			/(^|\/)index\.(md|mdx)$/,
+		),
+		base: "./src/content/projects",
+		generateId: ({ entry }) => entry.split("/")[0],
+	}),
 	schema: z.object({}),
 });
 export const collections = {

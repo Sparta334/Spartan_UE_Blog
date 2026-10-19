@@ -1,11 +1,17 @@
+import { byLang, SITE_LANG } from "../i18n/lang";
 import type { SiteConfig } from "../types/config";
 
-// 定义站点语言
-const SITE_LANG = "zh_TW"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
+// 站点语言由 src/i18n/lang.ts 决定：預設繁中，PUBLIC_SITE_LANG=en 時建置英文版
 
 export const siteConfig: SiteConfig = {
-	title: "Spartan 的 Unreal 筆記",
-	subtitle: "Unreal Engine 技術研究紀錄",
+	title: byLang({
+		zh_TW: "Spartan 的 Unreal 筆記",
+		en: "Spartan's Unreal Notes",
+	}),
+	subtitle: byLang({
+		zh_TW: "Unreal Engine 技術研究紀錄",
+		en: "Unreal Engine technical notes",
+	}),
 	siteURL: "https://spartan117.cc/", // 请替换为你的站点URL，以斜杠结尾
 	siteStartDate: "2026-10-13", // 站点开始运行日期，用于站点统计组件计算运行天数
 	timeZone: "Asia/Taipei", // 文章日期使用的 IANA 时区，可改为 Asia/Tokyo、Europe/Berlin 等
@@ -35,7 +41,7 @@ export const siteConfig: SiteConfig = {
 		// 显示模式："text-icon" 显示图标+文本，"logo" 仅显示Logo
 		mode: "text-icon",
 		// 顶栏标题文本
-		text: "UE 筆記",
+		text: byLang({ zh_TW: "UE 筆記", en: "UE Notes" }),
 		// 顶栏标题图标路径，默认使用 public/assets/home/home.webp
 		// 留空就不顯示圖示
 		icon: "",
@@ -153,11 +159,14 @@ export const siteConfig: SiteConfig = {
 
 		homeText: {
 			enable: true,
-			title: "Unreal 技術筆記",
+			title: byLang({ zh_TW: "Unreal 技術筆記", en: "Unreal Tech Notes" }),
 			switchable: true,
 
 			subtitle: [
-				"記錄研究過、寫過的 Unreal Engine 技術",
+				byLang({
+					zh_TW: "記錄研究過、寫過的 Unreal Engine 技術",
+					en: "Notes on the Unreal Engine tech I research and build",
+				}),
 				"C++ / Blueprint / Unreal / C# / Unity",
 			],
 			typewriter: {

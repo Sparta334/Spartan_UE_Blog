@@ -27,6 +27,7 @@ import {
 	permalinkConfig,
 	siteConfig,
 } from "./src/config/index.ts";
+import { LANG_BASES, SITE_LANG } from "./src/i18n/lang.ts";
 import { buildIconInclude } from "./src/plugins/astro-icon-include.mjs";
 import postMedia from "./src/integrations/post-media.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
@@ -103,7 +104,9 @@ export default defineConfig({
 		: [],
 
 	site: siteConfig.siteURL,
-	base: "/",
+	// 英文版建置在 dist/en，網址是 /en/...（見 src/i18n/lang.ts）
+	base: LANG_BASES[SITE_LANG],
+	outDir: SITE_LANG === "en" ? "./dist/en" : "./dist",
 	trailingSlash: "always",
 	compressHTML: true,
 

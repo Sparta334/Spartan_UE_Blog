@@ -4,6 +4,7 @@ import { Icon } from "astro-icon/components";
 import Markdown from "@components/misc/Markdown.astro";
 
 import { projectsData } from "../../data/projects";
+import { byLang } from "../../i18n/lang";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import { url } from "../../utils/url-utils";
 
@@ -21,7 +22,7 @@ const title = project?.title ?? entry.id;
 <MainGridLayout title={title} description={project?.description} headings={headings}>
 	<div class="card-base z-10 px-6 md:px-9 py-6 relative w-full onload-animation">
 		<a href={url("/projects/")} class="inline-flex items-center gap-1 text-sm text-50 hover:text-(--primary) transition">
-			<Icon name="material-symbols:arrow-back-rounded" class="w-4 h-4" /> 專案展示
+			<Icon name="material-symbols:arrow-back-rounded" class="w-4 h-4" /> {byLang({ zh_TW: "專案展示", en: "Projects" })}
 		</a>
 		<h1 class="mt-3 text-3xl font-bold text-90">{title}</h1>
 		{project?.description && <p class="mt-2 text-75">{project.description}</p>}
@@ -38,7 +39,7 @@ const title = project?.title ?? entry.id;
 							rel="noopener noreferrer"
 							class="project-game-link ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
 						>
-							<Icon name="material-symbols:sports-esports" class="w-4 h-4" /> 遊戲連結
+							<Icon name="material-symbols:sports-esports" class="w-4 h-4" /> {byLang({ zh_TW: "遊戲連結", en: "Game link" })}
 						</a>
 					)}
 				</div>

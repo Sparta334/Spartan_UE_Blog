@@ -1,0 +1,45 @@
+---
+import { Icon } from "astro-icon/components";
+
+import { byLang, type SiteLang } from "../../i18n/lang";
+
+const target: SiteLang = byLang({ zh_TW: "en", en: "zh_TW" });
+const label = byLang({ zh_TW: "EN", en: "中文" });
+const title = byLang({ zh_TW: "Switch to English", en: "切換到繁體中文" });
+---
+<button
+	aria-label={title}
+	title={title}
+	data-lang-switch={target}
+	class="btn-plain scale-animation rounded-lg h-11 min-w-11 px-2 gap-1 active:scale-90"
+>
+	<Icon name="material-symbols:translate" class="text-[1.25rem]" />
+	<span class="hidden sm:inline text-sm font-bold">{label}</span>
+</button>
+
+<script>
+	import {
+		LANG_STORAGE_KEY,
+		SITE_LANG,
+		type SiteLang,
+		switchLangPath,
+	} from "../../i18n/lang";
+
+	// 導覽列在 Swup 換頁時不會重新渲染，所以點擊當下才用目前網址算出目標頁
+	document.addEventListener("click", (event) => {
+		const button = (event.target as Element | null)?.closest<HTMLElement>(
+			"[data-lang-switch]",
+		);
+		if (!button) {
+			return;
+		}
+		const target = button.dataset.langSwitch as SiteLang;
+		try {
+			localStorage.setItem(LANG_STORAGE_KEY, target);
+		} catch {}
+		const { pathname, search, hash } = window.location;
+		// 換語言是整頁重新載入，不走 Swup
+		window.location.href =
+			switchLangPath(pathname, SITE_LANG, target) + search + hash;
+	});
+</script>

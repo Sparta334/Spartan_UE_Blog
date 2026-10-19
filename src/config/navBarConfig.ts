@@ -1,3 +1,4 @@
+import { byLang } from "../i18n/lang";
 import type { NavBarConfig } from "../types/config";
 import { LinkPreset } from "../types/config";
 
@@ -131,22 +132,22 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		{
-			name: "專案展示",
+			name: byLang({ zh_TW: "專案展示", en: "Projects" }),
 			url: "/projects/",
 			icon: "material-symbols:work",
 		},
 		{
-			name: "其他",
+			name: byLang({ zh_TW: "其他", en: "More" }),
 			url: "#",
 			icon: "material-symbols:more-horiz",
 			children: [
 				{
-					name: "時間線",
+					name: byLang({ zh_TW: "時間線", en: "Timeline" }),
 					url: "/timeline/",
 					icon: "material-symbols:timeline",
 				},
 				{
-					name: "全成就",
+					name: byLang({ zh_TW: "全成就", en: "100% Achievements" }),
 					url: "/achievements/",
 					icon: "fa7-brands:steam",
 				},

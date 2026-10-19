@@ -8,6 +8,13 @@ import CodeGroupManager from "@/components/features/markdown/CodeGroupManager.as
 import DiagramManager from "@/components/features/markdown/DiagramManager.astro";
 import MermaidManager from "@/components/features/markdown/MermaidManager.astro";
 import { pioConfig, profileConfig, siteConfig } from "@/config";
+import {
+	LANG_BASES,
+	LANG_STORAGE_KEY,
+	SITE_LANG,
+	type SiteLang,
+	switchLangPath,
+} from "@/i18n/lang";
 import { resolveFontMode } from "@/utils/fontMode";
 
 const BANNER_HEIGHT = 35;
@@ -134,6 +141,17 @@ if (!lang) {
 }
 const siteLang = lang.replace("_", "-");
 
+// 同一頁在各語言版本的網址，給搜尋引擎的 hreflang 用
+const alternateUrls = (Object.keys(LANG_BASES) as SiteLang[]).map(
+	(altLang) => ({
+		hreflang: altLang.replace("_", "-"),
+		href: new URL(
+			switchLangPath(Astro.url.pathname, SITE_LANG, altLang),
+			siteConfig.siteURL,
+		).href,
+	}),
+);
+
 const bannerOffsetByPosition = {
 	top: `${BANNER_HEIGHT_EXTEND}vh`,
 	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
@@ -188,6 +206,34 @@ const bannerOffset =
 				} catch(e) {}
 			})();
 		</script>
+
+		<!-- 繁中版：瀏覽器不是中文、或訪客選過英文時，自動導向英文版同一頁 -->
+		<script
+			is:inline
+			define:vars={{
+				siteLang: SITE_LANG,
+				enBase: LANG_BASES.en,
+				storageKey: LANG_STORAGE_KEY,
+			}}
+		>
+			(function () {
+				if (siteLang !== "zh_TW" || location.pathname.indexOf(enBase) === 0) return;
+				try {
+					var pref = localStorage.getItem(storageKey);
+					if (pref === "zh_TW") return;
+					if (pref !== "en") {
+						if (/bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent)) return;
+						var first = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+						if (/^zh/i.test(first)) return;
+					}
+					location.replace(enBase + location.pathname.replace(/^\//, "") + location.search + location.hash);
+				} catch (e) {}
+			})();
+		</script>
+		{alternateUrls.map(({ hreflang, href }) => (
+			<link rel="alternate" hreflang={hreflang} href={href} />
+		))}
+		<link rel="alternate" hreflang="x-default" href={alternateUrls[0].href} />
 
 		<!-- 第三方分析脚本 -->
 		<AnalyticsScripts

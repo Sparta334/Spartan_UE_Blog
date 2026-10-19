@@ -9,6 +9,8 @@
 ---
 
 <script>
+	import { byLang } from "../../../i18n/lang";
+
 	const MIN_SCALE = 0.5;
 	const MAX_SCALE = 4;
 	const STEP = 1.2;
@@ -51,10 +53,10 @@
 		const controls = document.createElement("div");
 		controls.className = "diagram-controls";
 		const actions: Array<[string, string, () => void]> = [
-			["＋", "放大", () => zoom(STEP)],
-			["−", "缩小", () => zoom(1 / STEP)],
-			["↺", "重置", reset],
-			["⛶", "全屏", () => openFullscreen(target)],
+			["＋", byLang({ zh_TW: "放大", en: "Zoom in" }), () => zoom(STEP)],
+			["−", byLang({ zh_TW: "缩小", en: "Zoom out" }), () => zoom(1 / STEP)],
+			["↺", byLang({ zh_TW: "重置", en: "Reset" }), reset],
+			["⛶", byLang({ zh_TW: "全屏", en: "Fullscreen" }), () => openFullscreen(target)],
 		];
 		for (const [label, title, action] of actions) {
 			const button = document.createElement("button");
@@ -112,7 +114,10 @@
 		closeButton.type = "button";
 		closeButton.className = "diagram-fullscreen-close";
 		closeButton.textContent = "×";
-		closeButton.setAttribute("aria-label", "关闭全屏图表");
+		closeButton.setAttribute(
+			"aria-label",
+			byLang({ zh_TW: "关闭全屏图表", en: "Close fullscreen diagram" }),
+		);
 		closeButton.addEventListener("click", close);
 		overlay.append(clone, closeButton);
 		overlay.addEventListener("click", (event) => {
