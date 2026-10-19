@@ -1,5 +1,5 @@
 ---
-import { Font } from "astro:assets";
+import { Font, getImage } from "astro:assets";
 import { PageProgressBar } from "@components/control/PageProgressBar";
 import Pio from "@components/features/pio/Pio.astro";
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
@@ -16,6 +16,7 @@ import {
 	switchLangPath,
 } from "@/i18n/lang";
 import { resolveFontMode } from "@/utils/fontMode";
+import { resolveImageMetadata } from "@/utils/image-source-utils";
 
 const BANNER_HEIGHT = 35;
 const BANNER_HEIGHT_EXTEND = 30;
@@ -130,9 +131,14 @@ if (siteConfig.generateOgImages && postSlug) {
 		: new URL(coverImage, Astro.site).toString();
 } else if (banner) {
 	// For others, use the first banner as OG image
-	ogImageUrl = banner.startsWith("http")
-		? banner
-		: new URL(banner, Astro.site).toString();
+	// 橫幅放在 src/assets/public/，建置時會被 Astro 改名放到 /_astro/，要用實際產生的檔案網址
+	const bannerMetadata = await resolveImageMetadata(banner);
+	const bannerUrl = bannerMetadata
+		? (await getImage({ src: bannerMetadata, width: 1200, format: "jpg" })).src
+		: banner;
+	ogImageUrl = bannerUrl.startsWith("http")
+		? bannerUrl
+		: new URL(bannerUrl, Astro.site).toString();
 }
 
 // const siteLang = siteConfig.lang.replace('_', '-')
