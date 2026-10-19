@@ -1,8 +1,11 @@
-![DreamStrikers](./logo.png)
+![DreamStrikers](./capsule.jpg)
 
 Inspired by Bandai Namco's Naruto: Ultimate Ninja Storm series and Jump Force, DreamStrikers is my attempt at an easy-to-pick-up 3D action fighting game. This page covers the main systems I designed and built for the project: the fighting camera, the character state machine and combat system, the online versus architecture, and the development tools.
 
-![DreamStrikers title screen](./concept.png "Title screen")
+<div align="center">
+<video src="./gameplay.mp4" controls playsinline preload="metadata" width="100%"></video>
+<br><em>Gameplay: versus matches, Soul skills and finishers</em>
+</div>
 
 :::tip
 In independent development. A demo is out on Steam, and the game is planned to go free-to-play. [Visit the Steam page](https://store.steampowered.com/app/3183230/_/)
@@ -17,7 +20,7 @@ DreamStrikers (code name Fightet) is a 3D versus fighting game built in Unreal E
 | Engine | Unreal Engine 5.8 (C++ module `Fightet` + Blueprint) |
 | Playable characters | KAI, LITO, RAIN, ICE (the roster is managed by `UMS_GameInstance.Player List`) |
 | Game modes | Local 2P, arcade (with AI), practice, online lobby (2 fighters + up to 6 spectators) |
-| Core systems | Two-fighter camera, Soul system (Soul skills 1–4, Awakening, the Final finisher), chase / evade (FFC) |
+| Core systems | Two-fighter camera, Soul system (Soul skills 1–4, Awakening, the Final finisher), chase / evade (FFC), finisher cinematics |
 | Character state machine | GBW Powerful State (driven by StateTree) + Gameplay Abilities |
 | Online | SteamCorePro + Online Subsystem Sessions, server-authoritative round flow |
 | Input | Enhanced Input (`IMC_Fighter` / `IMC_FighterP2`), DualShock support with rumble |
@@ -33,6 +36,14 @@ DreamStrikers (code name Fightet) is a 3D versus fighting game built in Unreal E
 | `Menu/` | Main menu scene: title camera zones, background flying traffic |
 | `BattleContent/` | C++ base for the Blueprint function libraries |
 
+### Characters
+
+![Character select screen](./char-select.jpg "Character select")
+
+![LITO](./intro-lito.jpg "LITO")
+![RAIN](./intro-rain.jpg "RAIN")
+![ICE](./intro-ice.jpg "ICE")
+
 ## Code architecture
 
 The core idea is "the server decides the match, and every machine stages its own presentation". The GameMode runs the round flow only on the server and writes the results into the replicated GameState. On each machine, the Battle Director turns state changes into HUD, camera and character events.
@@ -44,6 +55,11 @@ Read it from the top left: the online flow goes from a Steam lobby into lobby mo
 ## Camera system: a 3D fighting camera modeled on Ultimate Ninja Storm
 
 The camera's goal is to "always look from behind your own character, angled toward the midpoint between the two fighters", so players can see both themselves and their opponent in a free 3D arena. Instead of spawning a separate camera, it drives the SpringArm and Camera on the character directly, updated every frame by `AFightetBattlePlayerController::PlayerTick`. In online matches each machine runs its own camera focused on its own character; spectators follow P1.
+
+<div align="center">
+<video src="./camera-demo.mp4" controls autoplay muted loop playsinline preload="metadata" width="100%"></video>
+<br><em>The finished camera system: Default circling and tracking, cutting to the Flatting side view on hit, and Soul skill close-ups</em>
+</div>
 
 The camera has three modes (`E_BattleCameraMode`), plus a reserved "frozen" value that lets specific moves take over the camera. Mode changes don't apply immediately: they're written to `TargetCameraMode` and applied on the next frame, so several systems can't overwrite each other within the same frame.
 
@@ -93,6 +109,11 @@ When a Soul skill lands, a Level Sequence plays a close-up:
 
 The timing design is tied closely to online sync; see "Networking and online versus". The victory animation uses the same method, with an extra `Player` tag bound to the winner.
 
+<div align="center">
+<video src="./soul-skill-lito.mp4" controls playsinline preload="metadata" width="100%"></video>
+<br><em>LITO Soul skill close-up: Level Sequence camera work (in-editor preview)</em>
+</div>
+
 ### Local 2P camera: Switch Focus
 
 In local versus, two players share one screen, and the camera can only follow one of them at a time. `BP_BattleGameMode` "switches focus" to whichever fighter is closer to the camera:
@@ -132,6 +153,11 @@ In online matches, a character's movement is decided by the machine that owns it
 ## Combat system
 
 Combat is data-driven: each character is a GBW Powerful State template made of a StateTree, a team setting and a set of starting attributes, all defined in `DefaultGBW.ini`. Adding a character mostly means adding data and a state tree, without touching the shared character base `BP_PH_CharacterBase`. Players and AI share the same character and only swap StateTrees (for example `ST_PH_LITO` vs `ST_PH_V_AI-LITO` + `GBW_ST_AI`).
+
+![Versus match](./battle-1.jpg)
+![Versus match](./battle-2.jpg)
+![A Soul skill landing](./battle-3.jpg)
+![Combos and guard breaks](./battle-4.jpg)
 
 ### Character state tree (StateTree)
 
@@ -204,12 +230,17 @@ The last hit of a combo adds a launch Buff.
 Awakening and the finisher form one continuous flow:
 
 1. **Awakening:** when the Soul gauge is high enough, the UI hints that you can awaken (`CheckPlayerCanAwakeAnHint`). `STT_Awaking` starts Awakening, raising attack power and Soul skill damage by 50%.
-2. **Awakening drain:** while awakened, `AwakeEnegy` drains on a timer and is synced to the Awakening bar in the battle UI (`Awake Fade`).
-3. **Unlocking the finisher:** `STC_SoulFinalCondition` requires all three of: being awakened, the opponent's HP at or below 50%, and the Soul skill input at stage 4 (`SoulOperation` = 4). When the condition is met, the UI hints that you can finish (`Hint Player Can Final`).
-4. **Launch:** `STT_FinalAttackLaunch` launches the finisher, with parameters from the `SoulFinalData` table.
-5. **Cinematic:** `SoulKill Progress Handle` moves both characters to the special-move spot preset in the stage (`SpecialMMovesLocatedPoint`) and faces them toward each other, spawns a dedicated camera, and binds both fighters and the camera into a Level Sequence with `SetBindingByTag`.
+2. **Unlocking the finisher:** `STC_SoulFinalCondition` checks three conditions at once: you are **awakened**, the **opponent's HP is at or below 50%**, and **Soul has reached stage 4**. When all three hold, the UI hints that you can finish (`Hint Player Can Final`).
+3. **Launch:** `STT_FinalAttackLaunch` launches the finisher, with parameters from the `SoulFinalData` table.
+4. **Cinematic:** `SoulKill Progress Handle` moves both characters to the special-move spot preset in the stage (`SpecialMMovesLocatedPoint`) and faces them toward each other, spawns a dedicated camera, and binds both fighters and the camera into a Level Sequence with `SetBindingByTag`.
 
 The round timer pauses while the finisher plays, and if the finisher lands and its animation plays to the end, that player wins.
+
+![RAIN finisher](./final-rain-1.jpg "RAIN finisher")
+![RAIN finisher](./final-rain-2.jpg "RAIN finisher")
+
+![KAI finisher](./final-kai-1.jpg "KAI finisher")
+![KAI finisher](./final-kai-2.jpg "KAI finisher")
 
 ### Round flow
 
@@ -232,6 +263,10 @@ The AI uses the same character Blueprint as the player and just swaps the StateT
 ## Networking and online versus
 
 Online mode uses a "lobby-based Listen Server": the host is also the server, two players fight, and everyone else spectates in queue order. The transport layer is the SteamCore Sockets NetDriver (falling back to IpNetDriver on failure). The biggest challenge in this mode: the original local versus mode was written entirely in the Blueprint `BP_BattleGameMode`, and online the GameMode only exists on the server.
+
+![Creating a lobby](./online-room.jpg "Creating a lobby")
+![Online match (host P1 view)](./online-battle.jpg "Online match")
+![Online results](./online-result.jpg "Online results screen")
 
 ### Key design: the Battle Director bridge
 
@@ -289,4 +324,8 @@ Calls into Blueprints (reading HP, firing battle UI events and so on) go through
 
 ## Art style
 
-![Poster and slogan designs in a DreamStrikers stage](./posters.png "Poster and slogan designs in the stage")
+![DreamStrikers title screen](./concept.png "Title screen")
+
+![Stage](./stage-bg.jpg "Stage")
+
+![Poster and slogan designs in a DreamStrikers stage](./posters.jpg "Poster and slogan designs in the stage")
