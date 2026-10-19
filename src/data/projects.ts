@@ -1,6 +1,8 @@
 // Project data configuration file
 // Used to manage data for the project display page
 
+import { byLang } from "../i18n/lang";
+
 export interface Project {
 	id: string;
 	title: string;
@@ -25,11 +27,20 @@ export const projectsData: Project[] = [
 	{
 		id: "dreamstrikers",
 		title: "DreamStrikers",
-		description:
-			"受《火影忍者 終極風暴》與《Jump Force》啟發的 3D 對戰格鬥遊戲，支援本機、街機、練習與 Steam 線上房間對戰。",
+		description: byLang({
+			zh_TW:
+				"受《火影忍者 終極風暴》與《Jump Force》啟發的 3D 對戰格鬥遊戲，支援本機、街機、練習與 Steam 線上房間對戰。",
+			en: "A 3D versus fighting game inspired by Naruto: Ultimate Ninja Storm and Jump Force, with local, arcade, practice and Steam online lobby matches.",
+		}),
 		image: "assets/projects/dreamstrikers/cover.webp",
-		category: "遊戲",
-		techStack: ["Unreal Engine 5", "C++", "Blueprint", "StateTree", "Steam 線上"],
+		category: byLang({ zh_TW: "遊戲", en: "Game" }),
+		techStack: [
+			"Unreal Engine 5",
+			"C++",
+			"Blueprint",
+			"StateTree",
+			byLang({ zh_TW: "Steam 線上", en: "Steam Online" }),
+		],
 		status: "in-progress",
 		visitUrl: "https://store.steampowered.com/app/3183230/_/",
 		startDate: "2024-09-01",

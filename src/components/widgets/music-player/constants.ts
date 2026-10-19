@@ -1,3 +1,4 @@
+import { byLang } from "../../../i18n/lang";
 import type { Song } from "./types";
 
 export const STORAGE_KEY_VOLUME = "music-player-volume";
@@ -7,13 +8,17 @@ export const DEFAULT_VOLUME = 0.7;
 export const DEFAULT_COVER_URL = "/favicon/favicon.ico";
 
 // 封面使用 YouTube 影片縮圖，artist 標示來源
+const controlOst = byLang({
+	zh_TW: "控制：共振 原聲帶",
+	en: "Control Resonant OST",
+});
 const ytCover = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
 export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 3,
 		title: "Another World",
-		artist: "控制：共振 原聲帶",
+		artist: controlOst,
 		cover: ytCover("scUUhl6Lv8Q"),
 		url: "assets/music/url/another-world.mp3",
 		duration: 191,
@@ -21,7 +26,7 @@ export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 4,
 		title: "Manalan Mailla",
-		artist: "控制：共振 原聲帶",
+		artist: controlOst,
 		cover: ytCover("Qo8VOF3hmqE"),
 		url: "assets/music/url/manalan-mailla.mp3",
 		duration: 155,
@@ -29,7 +34,10 @@ export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 5,
 		title: "Beyond Light",
-		artist: "Destiny 2: Beyond Light 原聲帶",
+		artist: byLang({
+			zh_TW: "Destiny 2: Beyond Light 原聲帶",
+			en: "Destiny 2: Beyond Light OST",
+		}),
 		cover: ytCover("FOo7On4XHV8"),
 		url: "assets/music/url/beyond-light.mp3",
 		duration: 202,
@@ -53,7 +61,10 @@ export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 2,
 		title: "Bury the Light (Boss Edit)",
-		artist: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
+		artist: byLang({
+			zh_TW: "Casey Edwards（惡魔獵人5）· Edit by I_Archidon",
+			en: "Casey Edwards (Devil May Cry 5) · Edit by I_Archidon",
+		}),
 		cover: ytCover("g_93xQfRjEI"),
 		url: "assets/music/url/bury-the-light.mp3",
 		duration: 337,

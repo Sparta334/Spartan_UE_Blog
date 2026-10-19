@@ -1,5 +1,5 @@
 ---
-import { Font } from "astro:assets";
+import { Font, getImage } from "astro:assets";
 import { PageProgressBar } from "@components/control/PageProgressBar";
 import Pio from "@components/features/pio/Pio.astro";
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
@@ -8,7 +8,15 @@ import CodeGroupManager from "@/components/features/markdown/CodeGroupManager.as
 import DiagramManager from "@/components/features/markdown/DiagramManager.astro";
 import MermaidManager from "@/components/features/markdown/MermaidManager.astro";
 import { pioConfig, profileConfig, siteConfig } from "@/config";
+import {
+	LANG_BASES,
+	LANG_STORAGE_KEY,
+	SITE_LANG,
+	type SiteLang,
+	switchLangPath,
+} from "@/i18n/lang";
 import { resolveFontMode } from "@/utils/fontMode";
+import { resolveImageMetadata } from "@/utils/image-source-utils";
 
 const BANNER_HEIGHT = 35;
 const BANNER_HEIGHT_EXTEND = 30;
@@ -123,9 +131,14 @@ if (siteConfig.generateOgImages && postSlug) {
 		: new URL(coverImage, Astro.site).toString();
 } else if (banner) {
 	// For others, use the first banner as OG image
-	ogImageUrl = banner.startsWith("http")
-		? banner
-		: new URL(banner, Astro.site).toString();
+	// 橫幅放在 src/assets/public/，建置時會被 Astro 改名放到 /_astro/，要用實際產生的檔案網址
+	const bannerMetadata = await resolveImageMetadata(banner);
+	const bannerUrl = bannerMetadata
+		? (await getImage({ src: bannerMetadata, width: 1200, format: "jpg" })).src
+		: banner;
+	ogImageUrl = bannerUrl.startsWith("http")
+		? bannerUrl
+		: new URL(bannerUrl, Astro.site).toString();
 }
 
 // const siteLang = siteConfig.lang.replace('_', '-')
@@ -133,6 +146,17 @@ if (!lang) {
 	lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
+
+// 同一頁在各語言版本的網址，給搜尋引擎的 hreflang 用
+const alternateUrls = (Object.keys(LANG_BASES) as SiteLang[]).map(
+	(altLang) => ({
+		hreflang: altLang.replace("_", "-"),
+		href: new URL(
+			switchLangPath(Astro.url.pathname, SITE_LANG, altLang),
+			siteConfig.siteURL,
+		).href,
+	}),
+);
 
 const bannerOffsetByPosition = {
 	top: `${BANNER_HEIGHT_EXTEND}vh`,
@@ -188,6 +212,34 @@ const bannerOffset =
 				} catch(e) {}
 			})();
 		</script>
+
+		<!-- 繁中版：瀏覽器不是中文、或訪客選過英文時，自動導向英文版同一頁 -->
+		<script
+			is:inline
+			define:vars={{
+				siteLang: SITE_LANG,
+				enBase: LANG_BASES.en,
+				storageKey: LANG_STORAGE_KEY,
+			}}
+		>
+			(function () {
+				if (siteLang !== "zh_TW" || location.pathname.indexOf(enBase) === 0) return;
+				try {
+					var pref = localStorage.getItem(storageKey);
+					if (pref === "zh_TW") return;
+					if (pref !== "en") {
+						if (/bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent)) return;
+						var first = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+						if (/^zh/i.test(first)) return;
+					}
+					location.replace(enBase + location.pathname.replace(/^\//, "") + location.search + location.hash);
+				} catch (e) {}
+			})();
+		</script>
+		{alternateUrls.map(({ hreflang, href }) => (
+			<link rel="alternate" hreflang={hreflang} href={href} />
+		))}
+		<link rel="alternate" hreflang="x-default" href={alternateUrls[0].href} />
 
 		<!-- 第三方分析脚本 -->
 		<AnalyticsScripts

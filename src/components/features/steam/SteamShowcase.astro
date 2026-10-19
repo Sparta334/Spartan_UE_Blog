@@ -8,6 +8,7 @@ import {
 	steamStoreUrl,
 	totalPerfectAchievements,
 } from "../../../data/steam-games";
+import { byLang } from "../../../i18n/lang";
 import { url } from "../../../utils/url-utils";
 
 interface Props {
@@ -32,17 +33,17 @@ const Head = variant === "row" ? "summary" : "header";
 	<Head class="steam-head">
 		<div class="steam-title">
 			<Icon name="fa7-brands:steam" class="h-5 w-5" />
-			<span>全成就達成者展示欄</span>
+			<span>{byLang({ zh_TW: "全成就達成者展示欄", en: "Perfect Games Showcase" })}</span>
 		</div>
 		<div class="steam-stats">
-			<span><strong>{perfectGames.length}</strong> 款全成就遊戲</span>
-			<span><strong>{totalPerfectAchievements}</strong> 項成就</span>
+			<span><strong>{perfectGames.length}</strong> {byLang({ zh_TW: "款全成就遊戲", en: "perfect games" })}</span>
+			<span><strong>{totalPerfectAchievements}</strong> {byLang({ zh_TW: "項成就", en: "achievements" })}</span>
 		</div>
 		{
 			variant === "row" && (
 				<span class="steam-toggle">
-					<span class="steam-toggle-open">展開</span>
-					<span class="steam-toggle-close">收起</span>
+					<span class="steam-toggle-open">{byLang({ zh_TW: "展開", en: "Expand" })}</span>
+					<span class="steam-toggle-close">{byLang({ zh_TW: "收起", en: "Collapse" })}</span>
 					<Icon name="material-symbols:expand-more-rounded" class="steam-chevron h-5 w-5" />
 				</span>
 			)
@@ -68,11 +69,11 @@ const Head = variant === "row" ? "summary" : "header";
 						</div>
 						<div class="steam-bar">
 							<span>
-								{game.unlocked} / {game.total} 項成就
+								{game.unlocked} / {game.total} {byLang({ zh_TW: "項成就", en: "achievements" })}
 							</span>
 							{game.completedAt && <span class="steam-date">{game.completedAt}</span>}
 						</div>
-						<svg class="steam-medal" viewBox="0 0 40 40" aria-label="全成就">
+						<svg class="steam-medal" viewBox="0 0 40 40" aria-label={byLang({ zh_TW: "全成就", en: "100% achieved" })}>
 							<polygon
 								fill="#4a8fe0"
 								points="20,0 23,6 29,2 30,9 37,8 34,14 40,17 35,21 39,27 32,28 33,35 26,33 23,40 20,34 17,40 14,33 7,35 8,28 1,27 5,21 0,17 6,14 3,8 10,9 11,2 17,6"
@@ -90,14 +91,14 @@ const Head = variant === "row" ? "summary" : "header";
 		{
 			variant === "row" ? (
 				<a href={url("/achievements/")}>
-					查看完整展示欄 <Icon name="material-symbols:chevron-right-rounded" class="h-4 w-4" />
+					{byLang({ zh_TW: "查看完整展示欄", en: "View full showcase" })} <Icon name="material-symbols:chevron-right-rounded" class="h-4 w-4" />
 				</a>
 			) : (
 				<span />
 			)
 		}
 		<a href={steamProfileUrl} target="_blank" rel="noopener noreferrer">
-			Steam 個人檔案 <Icon name="material-symbols:open-in-new-rounded" class="h-4 w-4" />
+			{byLang({ zh_TW: "Steam 個人檔案", en: "Steam profile" })} <Icon name="material-symbols:open-in-new-rounded" class="h-4 w-4" />
 		</a>
 	</footer>
 	</Outer>

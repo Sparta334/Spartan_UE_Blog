@@ -2,12 +2,20 @@
 import { PageHeader } from "@components/features/page-header";
 import SteamShowcase from "@components/features/steam/SteamShowcase.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+import { byLang } from "@/i18n/lang";
+
+const title = byLang({ zh_TW: "全成就", en: "100% Achievements" });
+const description = byLang({
+	zh_TW: "Steam 全成就達成的遊戲",
+	en: "Steam games with every achievement unlocked",
+});
 ---
 
-<MainGridLayout title="全成就" description="Steam 全成就達成的遊戲">
+<MainGridLayout title={title} description={description}>
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-6 md:px-9 py-6 relative w-full">
-			<PageHeader title="全成就" />
+			<PageHeader title={title} />
 			<SteamShowcase variant="grid" class="mt-4 onload-animation" />
 		</div>
 	</div>

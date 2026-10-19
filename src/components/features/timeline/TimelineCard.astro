@@ -2,6 +2,7 @@
 import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
+import { byLang } from "../../../i18n/lang";
 import { i18n } from "../../../i18n/translation";
 import { resolveAssetUrl } from "@/utils/asset-url";
 import type { TimelineCardProps } from "./types";
@@ -169,7 +170,7 @@ const hasLinks = gameLinks.length > 0 || otherLinks.length > 0;
 							class="text-base w-4 h-4 shrink-0 mt-0.5"
 						/>
 						<div>
-							<span class="timeline-status-label">專案現狀</span>
+							<span class="timeline-status-label">{byLang({ zh_TW: "專案現狀", en: "Status" })}</span>
 							<span class="text-sm text-black/70 dark:text-white/70">{item.status}</span>
 						</div>
 					</div>
@@ -254,7 +255,7 @@ const hasLinks = gameLinks.length > 0 || otherLinks.length > 0;
 									name="material-symbols:sports-esports"
 									class="text-sm w-4 h-4"
 								/>
-								遊戲連結
+								{byLang({ zh_TW: "遊戲連結", en: "Game link" })}
 							</a>
 						))}
 						{otherLinks.map((link) => (

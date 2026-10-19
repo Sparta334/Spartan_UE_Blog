@@ -27,6 +27,7 @@ import {
 	permalinkConfig,
 	siteConfig,
 } from "./src/config/index.ts";
+import { LANG_BASES, SITE_LANG } from "./src/i18n/lang.ts";
 import { buildIconInclude } from "./src/plugins/astro-icon-include.mjs";
 import postMedia from "./src/integrations/post-media.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
@@ -103,7 +104,11 @@ export default defineConfig({
 		: [],
 
 	site: siteConfig.siteURL,
-	base: "/",
+	// 英文版建置在 dist/en，網址是 /en/...（見 src/i18n/lang.ts）
+	base: LANG_BASES[SITE_LANG],
+	outDir: SITE_LANG === "en" ? "./dist/en" : "./dist",
+	// 英文版的 JS、CSS、圖片連到根目錄的 /_astro/，和繁中版共用（scripts/build-site.mjs 會合併兩邊的檔案）
+	build: SITE_LANG === "en" ? { assetsPrefix: LANG_BASES.zh_TW } : {},
 	trailingSlash: "always",
 	compressHTML: true,
 

@@ -10,6 +10,7 @@ import { siteConfig } from "../config";
 import { getShuffledFriendsList } from "../data/friends";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
+import { resolveAssetUrl } from "@/utils/asset-url";
 
 export const prerender = true;
 
@@ -135,7 +136,7 @@ const allTags = Array.from(new Set(friendsList.flatMap((item) => item.tags)));
 	</div>
 
 	<!-- 引用全局脚本 -->
-	<script is:inline src={`${import.meta.env.BASE_URL}js/friends-page-handler.js`}></script>
+	<script is:inline src={resolveAssetUrl("js/friends-page-handler.js")}></script>
 
 	<div class="mt-4">
 		<Comment path="/friends/" />

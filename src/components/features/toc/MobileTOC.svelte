@@ -3,6 +3,7 @@ import Icon from "@iconify/svelte";
 import { onMount } from "svelte";
 
 import I18nKey from "../../../i18n/i18nKey";
+import { byLang } from "../../../i18n/lang";
 import { i18n } from "../../../i18n/translation";
 import { navigateToPage } from "../../../utils/navigation-utils";
 import { panelManager } from "../../../utils/panel-manager.js";
@@ -270,7 +271,7 @@ const getActivePadding = (level: number): string => {
 					icon="material-symbols:article-outline"
 					class="text-2xl mb-2"
 				/>
-				<p>暂无文章</p>
+				<p>{byLang({ zh_TW: "暂无文章", en: "No posts yet" })}</p>
 			</div>
 		{:else}
 			<div class="post-content">
