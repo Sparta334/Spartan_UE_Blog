@@ -2,5 +2,8 @@ User-agent: *
 Disallow: /
 Allow: /$
 Allow: /posts/
+Allow: /en/$
+Allow: /en/posts/
 
 Sitemap: https://spartan117.cc/sitemap-index.xml
+Sitemap: https://spartan117.cc/en/sitemap-index.xml

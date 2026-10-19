@@ -1,0 +1,1 @@
+import{i as s,n as i,t as r}from"./lang.CCkJel0P.js";document.addEventListener("click",n=>{const t=n.target?.closest("[data-lang-switch]");if(!t)return;const a=t.dataset.langSwitch;try{localStorage.setItem(r,a)}catch{}const{pathname:c,search:o,hash:e}=window.location;window.location.href=s(c,i,a)+o+e});

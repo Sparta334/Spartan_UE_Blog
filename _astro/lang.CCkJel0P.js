@@ -1,0 +1,1 @@
+function i(){return"zh_TW"}var c=i(),r={zh_TW:"/",en:"/en/"};function o(n){return n[c]}var u="site-lang";function L(n,e,s){const t=r[e],a=n.startsWith(t)?n.slice(t.length):n.replace(/^\//,"");return r[s]+a}export{L as i,c as n,o as r,u as t};
