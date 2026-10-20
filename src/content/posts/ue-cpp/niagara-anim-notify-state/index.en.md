@@ -126,6 +126,27 @@ In that case it just spawns the effect so artists can check its placement, and s
 
 ---
 
+## Gotcha 2: the Notify object is shared by every character
+
+An AnimNotifyState object lives on the animation asset, so **every character playing that animation shares the same instance**. Characters don't each get their own copy.
+
+If you store the spawned effect in a single member variable, things break when two characters play the same animation at the same time (for example, two of the same enemy attacking together):
+
+1. The second character's `NotifyBegin` overwrites the first character's effect pointer
+2. The first character's `NotifyEnd` then clears the pointer
+3. The second character's effect never gets its `NotifyEnd`: it never stops following, and its TimeDilation stays stuck in slow motion
+
+So use a Map instead, keyed by MeshComp, to track each character's effect separately:
+
+```cpp
+TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<UNiagaraComponent>> SpawnedNiagaraComponents;
+```
+
+- `TWeakObjectPtr` means no dangling pointers when a character or effect is destroyed
+- `NotifyEnd` removes that Mesh's entry; `NotifyBegin` also cleans up any stale entries
+
+---
+
 ## Full source
 
 ### NiagaraFreezeFrame_AnimNotifyState.h
@@ -189,9 +210,8 @@ public:
 	                       const FAnimNotifyEventReference& EventReference) override;
 
 private:
-	/** The effect spawned this time; used by NotifyTick / NotifyEnd */
-	UPROPERTY()
-	TObjectPtr<UNiagaraComponent> SpawnedNiagaraComponent = nullptr;
+	/** Effects spawned per Mesh; used by NotifyTick / NotifyEnd. The Notify object is shared by every character, so one pointer isn't enough */
+	TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<UNiagaraComponent>> SpawnedNiagaraComponents;
 };
 ```
 
@@ -202,6 +222,7 @@ private:
 
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -259,11 +280,20 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyBegin(USkeletalMeshComponent* Me
 		true,
 		ENCPoolMethod::AutoRelease
 	);
-	SpawnedNiagaraComponent = NiagaraComponent;
 	if (!NiagaraComponent)
 	{
 		return;
 	}
+
+	// Clean up entries whose Mesh was destroyed before NotifyEnd arrived
+	for (auto It = SpawnedNiagaraComponents.CreateIterator(); It; ++It)
+	{
+		if (!It.Key().IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+	SpawnedNiagaraComponents.Add(MeshComp, NiagaraComponent);
 
 	const FTransform SpawnTransform = MeshComp->GetComponentTransform();
 	const FVector InitWorldLocation = SpawnTransform.TransformPosition(LocationOffset);
@@ -294,7 +324,7 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyTick(USkeletalMeshComponent* Mes
 {
 	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime, EventReference);
 
-	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponent;
+	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponents.FindRef(MeshComp).Get();
 	if (!MeshComp || !NiagaraComponent)
 	{
 		return;
@@ -315,8 +345,9 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyEnd(USkeletalMeshComponent* Mesh
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
-	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponent;
-	SpawnedNiagaraComponent = nullptr;
+	TWeakObjectPtr<UNiagaraComponent> SpawnedComponent;
+	SpawnedNiagaraComponents.RemoveAndCopyValue(MeshComp, SpawnedComponent);
+	UNiagaraComponent* NiagaraComponent = SpawnedComponent.Get();
 	if (!NiagaraComponent)
 	{
 		return;
@@ -354,5 +385,6 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyEnd(USkeletalMeshComponent* Mesh
 - To stop following midway, use **Absolute Location / Rotation**, which lets you control location and rotation separately
 - **After calling `SetUsingAbsoluteLocation` / `SetUsingAbsoluteRotation` on their own, add `UpdateComponentToWorld()`**, or use `SetAbsolute`, which updates automatically
 - To respect hit-stop, use `SetForceSolo(true)` and sync `SetCustomTimeDilation` every frame
+- The Notify object is shared by every character, so track each character's effect in **a Map keyed by MeshComp**
 
 > Reminder: all of this is UE 5.6 behavior. Check it yourself on other versions.

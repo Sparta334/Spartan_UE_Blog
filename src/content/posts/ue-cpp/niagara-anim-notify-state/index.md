@@ -126,6 +126,27 @@ NiagaraComponent->SetCustomTimeDilation(OwnerCharacter->CustomTimeDilation * Glo
 
 ---
 
+## 坑二：Notify 物件是所有角色共用的
+
+AnimNotifyState 物件掛在動畫資源上，**所有播放這段動畫的角色共用同一個實例**，不是每個角色各一份。
+
+如果把生成的特效存成單一個成員變數，兩個角色同時播同一段動畫時（例如兩隻同種敵人一起攻擊）就會出事：
+
+1. 第二個角色的 `NotifyBegin` 蓋掉第一個角色的特效指標
+2. 第一個角色的 `NotifyEnd` 又把指標清掉
+3. 第二個角色的特效收不到 `NotifyEnd`：不會解除跟隨，TimeDilation 也一直停在慢動作
+
+所以改用 Map，以 MeshComp 當 Key，分開記錄每個角色的特效：
+
+```cpp
+TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<UNiagaraComponent>> SpawnedNiagaraComponents;
+```
+
+- 用 `TWeakObjectPtr`：角色或特效被銷毀時，不會留下懸空指標
+- `NotifyEnd` 時移除該 Mesh 的紀錄；`NotifyBegin` 時順便清掉已失效的紀錄
+
+---
+
 ## 完整程式碼
 
 ### NiagaraFreezeFrame_AnimNotifyState.h
@@ -189,9 +210,8 @@ public:
 	                       const FAnimNotifyEventReference& EventReference) override;
 
 private:
-	/** 這次生成的特效，NotifyTick / NotifyEnd 會用到 */
-	UPROPERTY()
-	TObjectPtr<UNiagaraComponent> SpawnedNiagaraComponent = nullptr;
+	/** 每個 Mesh 各自生成的特效，NotifyTick / NotifyEnd 會用到。Notify 物件是所有角色共用的，不能只存一個指標 */
+	TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<UNiagaraComponent>> SpawnedNiagaraComponents;
 };
 ```
 
@@ -202,6 +222,7 @@ private:
 
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -259,11 +280,20 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyBegin(USkeletalMeshComponent* Me
 		true,
 		ENCPoolMethod::AutoRelease
 	);
-	SpawnedNiagaraComponent = NiagaraComponent;
 	if (!NiagaraComponent)
 	{
 		return;
 	}
+
+	// 清掉 Mesh 已被銷毀、沒等到 NotifyEnd 的紀錄
+	for (auto It = SpawnedNiagaraComponents.CreateIterator(); It; ++It)
+	{
+		if (!It.Key().IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+	SpawnedNiagaraComponents.Add(MeshComp, NiagaraComponent);
 
 	const FTransform SpawnTransform = MeshComp->GetComponentTransform();
 	const FVector InitWorldLocation = SpawnTransform.TransformPosition(LocationOffset);
@@ -294,7 +324,7 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyTick(USkeletalMeshComponent* Mes
 {
 	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime, EventReference);
 
-	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponent;
+	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponents.FindRef(MeshComp).Get();
 	if (!MeshComp || !NiagaraComponent)
 	{
 		return;
@@ -315,8 +345,9 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyEnd(USkeletalMeshComponent* Mesh
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
-	UNiagaraComponent* NiagaraComponent = SpawnedNiagaraComponent;
-	SpawnedNiagaraComponent = nullptr;
+	TWeakObjectPtr<UNiagaraComponent> SpawnedComponent;
+	SpawnedNiagaraComponents.RemoveAndCopyValue(MeshComp, SpawnedComponent);
+	UNiagaraComponent* NiagaraComponent = SpawnedComponent.Get();
 	if (!NiagaraComponent)
 	{
 		return;
@@ -354,5 +385,6 @@ void UNiagaraFreezeFrame_AnimNotifyState::NotifyEnd(USkeletalMeshComponent* Mesh
 - 中途解除跟隨用 **Absolute Location / Rotation**，位置與旋轉可以分開控制
 - **單獨呼叫 `SetUsingAbsoluteLocation` / `SetUsingAbsoluteRotation` 後要補 `UpdateComponentToWorld()`**，或直接用會自動更新的 `SetAbsolute`
 - 要吃卡肉就 `SetForceSolo(true)` ＋ 每幀同步 `SetCustomTimeDilation`
+- Notify 物件是所有角色共用的，每個角色的特效要用 **以 MeshComp 為 Key 的 Map** 分開記錄
 
 > 再次提醒：以上是 UE 5.6 的行為，其他版本請自行確認。
