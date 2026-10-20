@@ -59,6 +59,36 @@ export const LOCAL_PLAYLIST: Song[] = [
 		duration: 170,
 	},
 	{
+		id: 8,
+		title: "ひゅるりらぱっぱ",
+		artist: byLang({
+			zh_TW: "tuki.・專輯《15》",
+			en: "tuki. · Album \"15\"",
+		}),
+		cover: ytCover("AOfaWrBwo7I"),
+		url: "assets/music/url/hyururirapappa.mp3",
+		duration: 200,
+	},
+	{
+		id: 9,
+		title: "Bunny Girl",
+		artist: "AKASAKI",
+		cover: ytCover("RCltAg_iK0E"),
+		url: "assets/music/url/bunny-girl.mp3",
+		duration: 217,
+	},
+	{
+		id: 10,
+		title: "死ぬか生きるか",
+		artist: byLang({
+			zh_TW: "千葉雄喜（JoJo 的奇妙冒險 飆馬野郎 片尾曲）",
+			en: "Yuki Chiba (JoJo's Bizarre Adventure: Steel Ball Run ending)",
+		}),
+		cover: ytCover("BfZD2dAqt6k"),
+		url: "assets/music/url/shinukaikiruka.mp3",
+		duration: 90,
+	},
+	{
 		id: 2,
 		title: "Bury the Light (Boss Edit)",
 		artist: byLang({
