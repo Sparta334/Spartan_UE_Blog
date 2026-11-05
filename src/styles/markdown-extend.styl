@@ -332,9 +332,6 @@ a.card-github.fetch-error
   .mermaid-wrapper
     padding: 1rem
 
-  .mermaid .mermaid-zoom-wrapper > svg
-    max-height: 400px
-
 
 .mermaid-viewport
   display: grid
@@ -354,6 +351,12 @@ a.card-github.fetch-error
   &.is-static
     cursor: default
     touch-action: auto
+
+  // 收合時只露出上半部並淡出（高度和 mermaid-render-script.js 的 COLLAPSED_HEIGHT 一致）
+  &.is-collapsed
+    max-height: 360px
+    align-items: start
+    mask-image: linear-gradient(to bottom, #000 65%, transparent)
 
     .mermaid-zoom-wrapper
       transition: none
@@ -410,11 +413,21 @@ a.card-github.fetch-error
     outline: 2px solid var(--primary)
     outline-offset: 2px
 
-.mermaid-control.mermaid-control-expand
-  width: auto
-  padding: 0 .75rem
+.mermaid-collapse-toggle
+  display: block
+  margin: .5rem auto 0
+  padding: .35rem 1rem
+  color: var(--btn-content)
+  border: 0
+  border-radius: .5rem
+  background: var(--btn-regular-bg)
+  cursor: pointer
+  font: inherit
   font-size: .875rem
-  white-space: nowrap
+
+  &:hover
+    color: var(--primary)
+    background: var(--btn-regular-bg-hover)
 
 .mermaid-fullscreen-overlay
   position: fixed

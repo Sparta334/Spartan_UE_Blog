@@ -8,6 +8,8 @@ import { byLang } from "../i18n/lang";
 	const MAX_SCALE = 6;
 	const ZOOM_STEP = 1.2;
 	const MAX_RETRIES = 3;
+	// 文章內的圖超過這個高度就預設收合（和 markdown-extend.styl 的 .is-collapsed 一致）
+	const COLLAPSED_HEIGHT = 360;
 	const RETRY_DELAY = 1000;
 
 	let currentTheme = null;
@@ -41,9 +43,7 @@ import { byLang } from "../i18n/lang";
 	function createControlButton(action, signal) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.className = action.className
-			? `mermaid-control ${action.className}`
-			: "mermaid-control";
+		button.className = "mermaid-control";
 		button.dataset.action = action.name;
 		button.textContent = action.label;
 		button.title = action.title;
@@ -64,7 +64,7 @@ import { byLang } from "../i18n/lang";
 		diagramControllers.get(host)?.destroy();
 	}
 
-	// interactive: false 時只顯示圖與「展開」按鈕，不能拖曳或縮放（文章內的圖用這個）
+	// interactive: false 時圖不能拖曳或縮放，太高的圖可以收合／展開（文章內的圖用這個）
 	function attachDiagramInteraction(host, svgElement, options = {}) {
 		disposeDiagramInteraction(host);
 		const interactive = options.interactive !== false;
@@ -144,12 +144,10 @@ import { byLang } from "../i18n/lang";
 		const actions = interactive ? zoomActions : [];
 
 		if (typeof options.onFullscreen === "function") {
-			const expandTitle = byLang({ zh_TW: "展開", en: "Expand" });
 			actions.push({
 				name: "fullscreen",
-				label: `⛶ ${expandTitle}`,
-				title: expandTitle,
-				className: "mermaid-control-expand",
+				label: "⛶",
+				title: byLang({ zh_TW: "全螢幕", en: "Fullscreen" }),
 				run: options.onFullscreen,
 			});
 		}
@@ -169,6 +167,7 @@ import { byLang } from "../i18n/lang";
 
 		if (!interactive) {
 			viewport.classList.add("is-static");
+			setupCollapse(host, viewport);
 			return controller;
 		}
 
@@ -234,6 +233,32 @@ import { byLang } from "../i18n/lang";
 		viewport.addEventListener("dblclick", resetView, { signal });
 		applyTransform();
 		return controller;
+	}
+
+	function setupCollapse(host, viewport) {
+		// 等版面算好再量高度；圖不高就不需要收合
+		requestAnimationFrame(() => {
+			if (viewport.scrollHeight <= COLLAPSED_HEIGHT + 80) return;
+			const toggle = document.createElement("button");
+			toggle.type = "button";
+			toggle.className = "mermaid-collapse-toggle";
+			const setCollapsed = (collapsed) => {
+				viewport.classList.toggle("is-collapsed", collapsed);
+				toggle.textContent = collapsed
+					? `${byLang({ zh_TW: "展開", en: "Expand" })} ▾`
+					: `${byLang({ zh_TW: "收起", en: "Collapse" })} ▴`;
+				toggle.setAttribute("aria-expanded", String(!collapsed));
+			};
+			toggle.addEventListener("click", (event) => {
+				event.preventDefault();
+				const collapse = !viewport.classList.contains("is-collapsed");
+				setCollapsed(collapse);
+				// 收起後畫面變短，把圖捲回可見範圍
+				if (collapse) host.scrollIntoView({ block: "nearest" });
+			});
+			setCollapsed(true);
+			host.append(toggle);
+		});
 	}
 
 	function closeFullscreen() {
