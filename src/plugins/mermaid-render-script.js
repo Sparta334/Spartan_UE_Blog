@@ -1,3 +1,5 @@
+import { byLang } from "../i18n/lang";
+
 (() => {
 	if (window.mermaidInitialized) return;
 	window.mermaidInitialized = true;
@@ -39,7 +41,9 @@
 	function createControlButton(action, signal) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.className = "mermaid-control";
+		button.className = action.className
+			? `mermaid-control ${action.className}`
+			: "mermaid-control";
 		button.dataset.action = action.name;
 		button.textContent = action.label;
 		button.title = action.title;
@@ -60,8 +64,10 @@
 		diagramControllers.get(host)?.destroy();
 	}
 
+	// interactive: false 時只顯示圖與「展開」按鈕，不能拖曳或縮放（文章內的圖用這個）
 	function attachDiagramInteraction(host, svgElement, options = {}) {
 		disposeDiagramInteraction(host);
+		const interactive = options.interactive !== false;
 
 		const eventController = new AbortController();
 		const { signal } = eventController;
@@ -115,7 +121,7 @@
 			applyTransform();
 		}
 
-		const actions = [
+		const zoomActions = [
 			{
 				name: "zoom-in",
 				label: "+",
@@ -135,12 +141,15 @@
 				run: resetView,
 			},
 		];
+		const actions = interactive ? zoomActions : [];
 
 		if (typeof options.onFullscreen === "function") {
+			const expandTitle = byLang({ zh_TW: "展開", en: "Expand" });
 			actions.push({
 				name: "fullscreen",
-				label: "⛶",
-				title: "View fullscreen",
+				label: `⛶ ${expandTitle}`,
+				title: expandTitle,
+				className: "mermaid-control-expand",
 				run: options.onFullscreen,
 			});
 		}
@@ -149,6 +158,19 @@
 			controls.appendChild(createControlButton(action, signal));
 		}
 		host.replaceChildren(viewport, controls);
+
+		const controller = {
+			destroy() {
+				eventController.abort();
+				diagramControllers.delete(host);
+			},
+		};
+		diagramControllers.set(host, controller);
+
+		if (!interactive) {
+			viewport.classList.add("is-static");
+			return controller;
+		}
 
 		viewport.addEventListener(
 			"pointerdown",
@@ -211,14 +233,6 @@
 
 		viewport.addEventListener("dblclick", resetView, { signal });
 		applyTransform();
-
-		const controller = {
-			destroy() {
-				eventController.abort();
-				diagramControllers.delete(host);
-			},
-		};
-		diagramControllers.set(host, controller);
 		return controller;
 	}
 
@@ -464,6 +478,7 @@
 									? "brightness(0.9) contrast(1.1)"
 									: "none";
 								attachDiagramInteraction(element, svgElement, {
+									interactive: false,
 									onFullscreen: () => openFullscreen(svgElement),
 								});
 								return;

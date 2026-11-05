@@ -350,6 +350,11 @@ a.card-github.fetch-error
   &.is-panning
     cursor: grabbing
 
+  // 文章內的圖：不能拖曳縮放，手機上也能正常捲動頁面
+  &.is-static
+    cursor: default
+    touch-action: auto
+
     .mermaid-zoom-wrapper
       transition: none
 
@@ -404,6 +409,12 @@ a.card-github.fetch-error
   &:focus-visible
     outline: 2px solid var(--primary)
     outline-offset: 2px
+
+.mermaid-control.mermaid-control-expand
+  width: auto
+  padding: 0 .75rem
+  font-size: .875rem
+  white-space: nowrap
 
 .mermaid-fullscreen-overlay
   position: fixed
