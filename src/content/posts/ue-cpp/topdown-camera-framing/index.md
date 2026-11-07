@@ -8,7 +8,7 @@ draft: false
 ---
 
 > 一個自訂的 PlayerCameraManager，加上兩個元件與一個 DataAsset，讓俯視角鏡頭能「自動把目標收進畫面」，也能「依演出播放短暫的運鏡」。
-> 文中的 `PER_` 前綴是示範專案的命名，請換成自己專案的名稱。
+> 文中的 `PER_` 前綴是示範專案的命名，`YOURMODULE_API` 請換成自己模組的名稱；文末附完整程式碼。
 > ⚠️ 以下內容是在 **UE 5.8** 上實作與驗證的，其他版本的引擎行為可能有改變。
 
 ---
@@ -397,6 +397,771 @@ void APER_PlayerCameraManager::UpdateCamera(float DeltaTime)
 3. 再新增 **Arm Distance**：0 秒 → 0、0.4 秒 → 300、1.0 秒 → 0。
 4. `BlendInTime = 0.1`、`BlendOutTime = 0.2`。
 5. 在 Boss 跳躍動畫的 AnimNotify 或技能裡呼叫 `AddCameraDynamics(CD_BossJump)`。
+
+---
+
+## 完整程式碼
+
+> 以下是 `Camera/` 資料夾的完整原始碼。`YOURMODULE_API` 請換成自己模組的 API 巨集；`UE_LOG` 用的是 `LogTemp`，可以換成專案自己的 Log 分類。
+
+### PER_PlayerCameraManager.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Camera/PlayerCameraManager.h"
+#include "PER_PlayerCameraManager.generated.h"
+
+class UPER_CameraDynamicsData;
+
+USTRUCT()
+struct FPER_ActiveCameraDynamics
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<UPER_CameraDynamicsData> Data;
+
+	float Elapsed = 0.f;
+	float Duration = 0.f;
+	/** < 0 表示還沒被 Remove */
+	float StopElapsed = -1.f;
+};
+
+/**
+ * 玩家鏡頭：在 Pawn 鏡頭算完、Camera Modifier（CineShot、震動）套用之前，
+ * 依序套用安全框拉遠（UPER_CameraFramingComponent）與附加鏡頭效果（UPER_CameraDynamicsData）。
+ * ViewTarget 不是玩家 Pawn 時（LevelSequence 過場）兩者都不套用。
+ */
+UCLASS()
+class YOURMODULE_API APER_PlayerCameraManager : public APlayerCameraManager
+{
+	GENERATED_BODY()
+
+public:
+	/** 對本機玩家鏡頭播放附加效果。同一個 Data 重複呼叫會疊加 */
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera", meta = (WorldContext = "WorldContextObject"))
+	static bool AddCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data);
+
+	/** 淡出並移除這個 Data 播放中的所有效果 */
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera", meta = (WorldContext = "WorldContextObject"))
+	static void RemoveCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data);
+
+	virtual void UpdateCamera(float DeltaTime) override;
+
+protected:
+	virtual void UpdateViewTargetInternal(FTViewTarget& OutVT, float DeltaTime) override;
+
+private:
+	static APER_PlayerCameraManager* GetLocalCameraManager(const UObject* WorldContextObject);
+	static float GetWeight(const FPER_ActiveCameraDynamics& Active);
+
+	UPROPERTY(Transient)
+	TArray<FPER_ActiveCameraDynamics> ActiveDynamics;
+};
+```
+
+### PER_PlayerCameraManager.cpp
+
+```cpp
+#include "Camera/PER_PlayerCameraManager.h"
+
+#include "Camera/PER_CameraDynamicsData.h"
+#include "Camera/PER_CameraFramingComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+
+bool APER_PlayerCameraManager::AddCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data)
+{
+	APER_PlayerCameraManager* Manager = GetLocalCameraManager(WorldContextObject);
+	if (!Manager || !Data)
+	{
+		return false;
+	}
+	const float Duration = Data->GetDuration();
+	if (!Data->bLoop && Duration <= 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddCameraDynamics: %s 的曲線沒有 Key，也沒有勾 bLoop，不會有效果"), *GetNameSafe(Data));
+		return false;
+	}
+	FPER_ActiveCameraDynamics& Active = Manager->ActiveDynamics.AddDefaulted_GetRef();
+	Active.Data = Data;
+	Active.Duration = Duration;
+	return true;
+}
+
+void APER_PlayerCameraManager::RemoveCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data)
+{
+	APER_PlayerCameraManager* Manager = GetLocalCameraManager(WorldContextObject);
+	if (!Manager)
+	{
+		return;
+	}
+	for (FPER_ActiveCameraDynamics& Active : Manager->ActiveDynamics)
+	{
+		if (Active.Data == Data && Active.StopElapsed < 0.f)
+		{
+			Active.StopElapsed = 0.f;
+		}
+	}
+}
+
+APER_PlayerCameraManager* APER_PlayerCameraManager::GetLocalCameraManager(const UObject* WorldContextObject)
+{
+	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(WorldContextObject, 0);
+	APER_PlayerCameraManager* PERManager = Cast<APER_PlayerCameraManager>(Manager);
+	if (Manager && !PERManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("玩家的 PlayerCameraManager 不是 APER_PlayerCameraManager（%s），附加鏡頭效果無法播放"), *GetNameSafe(Manager->GetClass()));
+	}
+	return PERManager;
+}
+
+float APER_PlayerCameraManager::GetWeight(const FPER_ActiveCameraDynamics& Active)
+{
+	const UPER_CameraDynamicsData* Data = Active.Data;
+	float Weight = Data->BlendInTime > 0.f ? FMath::Clamp(Active.Elapsed / Data->BlendInTime, 0.f, 1.f) : 1.f;
+	if (!Data->bLoop && Data->BlendOutTime > 0.f)
+	{
+		Weight = FMath::Min(Weight, FMath::Clamp((Active.Duration - Active.Elapsed) / Data->BlendOutTime, 0.f, 1.f));
+	}
+	if (Active.StopElapsed >= 0.f)
+	{
+		Weight = FMath::Min(Weight, Data->BlendOutTime > 0.f ? FMath::Clamp(1.f - Active.StopElapsed / Data->BlendOutTime, 0.f, 1.f) : 0.f);
+	}
+	return FMath::SmoothStep(0.f, 1.f, Weight);
+}
+
+void APER_PlayerCameraManager::UpdateCamera(float DeltaTime)
+{
+	// 在這裡推進時間：UpdateViewTargetInternal 在 ViewTarget 混合期間一幀會呼叫兩次
+	ActiveDynamics.RemoveAll([DeltaTime](FPER_ActiveCameraDynamics& Active)
+	{
+		if (!Active.Data)
+		{
+			return true;
+		}
+		Active.Elapsed += DeltaTime;
+		if (Active.StopElapsed >= 0.f)
+		{
+			Active.StopElapsed += DeltaTime;
+			if (Active.StopElapsed >= Active.Data->BlendOutTime)
+			{
+				return true;
+			}
+		}
+		return !Active.Data->bLoop && Active.Elapsed >= Active.Duration;
+	});
+
+	Super::UpdateCamera(DeltaTime);
+}
+
+void APER_PlayerCameraManager::UpdateViewTargetInternal(FTViewTarget& OutVT, float DeltaTime)
+{
+	Super::UpdateViewTargetInternal(OutVT, DeltaTime);
+
+	APawn* Pawn = PCOwner ? PCOwner->GetPawn() : nullptr;
+	if (!Pawn || OutVT.Target != Pawn)
+	{
+		return;
+	}
+
+	if (UPER_CameraFramingComponent* Framing = Pawn->FindComponentByClass<UPER_CameraFramingComponent>())
+	{
+		Framing->ApplyFraming(PCOwner, DeltaTime, OutVT.POV);
+	}
+
+	for (const FPER_ActiveCameraDynamics& Active : ActiveDynamics)
+	{
+		const float Weight = GetWeight(Active);
+		if (Weight <= 0.f)
+		{
+			continue;
+		}
+		const float Time = Active.Data->bLoop && Active.Duration > 0.f ? FMath::Fmod(Active.Elapsed, Active.Duration) : Active.Elapsed;
+		for (const UPER_CameraDynamicsModifier* Modifier : Active.Data->Modifiers)
+		{
+			if (Modifier)
+			{
+				Modifier->ApplyToView(Time, Weight, OutVT.POV);
+			}
+		}
+	}
+}
+```
+
+### PER_CameraFramingComponent.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "EngineDefines.h"
+#include "PER_CameraFramingComponent.generated.h"
+
+class APlayerController;
+class UCanvas;
+struct FMinimalViewInfo;
+
+/**
+ * 玩家鏡頭的安全框。掛在玩家角色上，由 APER_PlayerCameraManager 每幀呼叫 ApplyFraming：
+ * 啟用中的 UPER_CameraTargetComponent 超出安全框時，沿鏡頭方向往後拉（等同加長 SpringArm），
+ * 鏡頭仍對準玩家；全部回到框內後再拉回。不改 CameraBoom 的 TargetArmLength，死亡鏡頭等藍圖動畫照常運作。
+ */
+UCLASS(ClassGroup = (Camera), meta = (BlueprintSpawnableComponent))
+class YOURMODULE_API UPER_CameraFramingComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UPER_CameraFramingComponent();
+
+	/** 安全框占畫面寬、高的比例，框外為禁止區域 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float SafeFrameWidthRatio = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float SafeFrameHeightRatio = 0.7f;
+
+	/** 最多往後拉多遠 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float MaxPullBackDistance = 2000.f;
+
+	/** 鏡頭變化的插值速度 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float PullOutSpeed = 4.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float PullInSpeed = 1.5f;
+
+	UFUNCTION(BlueprintPure, Category = "PER|Camera")
+	float GetCurrentPullBack() const { return CurrentPullBack; }
+
+	void ApplyFraming(const APlayerController* PC, float DeltaTime, FMinimalViewInfo& InOutPOV);
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	/** 啟用中且在各自 MaxFramingDistance 內的目標點 */
+	void GetFramingTargets(TArray<class UPER_CameraTargetComponent*>& OutTargets) const;
+
+	float CurrentPullBack = 0.f;
+	float RequiredPullBack = 0.f;
+
+#if ENABLE_DRAW_DEBUG
+	void DrawSafeFrameDebug(UCanvas* Canvas, APlayerController* PC);
+	FDelegateHandle DebugDrawHandle;
+
+	//  ApplyFraming 的計算輸入，顯示在除錯文字上
+	float DebugTanH = 0.f;
+	float DebugTanV = 0.f;
+	float DebugRawRequired = 0.f;
+	int32 DebugTargetCount = 0;
+	uint64 DebugApplyFrame = 0;
+#endif
+};
+```
+
+### PER_CameraFramingComponent.cpp
+
+```cpp
+#include "Camera/PER_CameraFramingComponent.h"
+
+#include "Camera/CameraTypes.h"
+#include "Camera/PER_CameraTargetComponent.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
+#include "SceneView.h"
+
+#if ENABLE_DRAW_DEBUG
+#include "CanvasItem.h"
+#include "Debug/DebugDrawService.h"
+#include "Engine/Canvas.h"
+#include "Engine/Engine.h"
+#include "HAL/IConsoleManager.h"
+
+/** 主控台輸入 PER.ShowCameraSafeFrame 1 顯示安全框、目標點與拉遠數值 */
+static TAutoConsoleVariable<bool> CVarShowCameraSafeFrame(
+	TEXT("PER.ShowCameraSafeFrame"),
+	false,
+	TEXT("顯示鏡頭安全框、安全框目標點與鏡頭拉遠距離"),
+	ECVF_Cheat);
+#endif
+
+namespace
+{
+	/**
+	 * 水平／垂直半視角的 tan，直接取引擎實際算圖用的投影矩陣（上一幀的畫面），
+	 * 以哪個軸的 FOV 為準、視窗比例都跟畫面一致（M[0][0] = 1 / tan 水平半視角，M[1][1] = 1 / tan 垂直半視角）
+	 */
+	bool GetTanHalfFov(const APlayerController* PC, float& OutTanH, float& OutTanV)
+	{
+		const ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+		if (!LocalPlayer || !LocalPlayer->ViewportClient || !LocalPlayer->ViewportClient->Viewport)
+		{
+			return false;
+		}
+		FSceneViewProjectionData ProjectionData;
+		if (!LocalPlayer->GetProjectionData(LocalPlayer->ViewportClient->Viewport, ProjectionData))
+		{
+			return false;
+		}
+		const FMatrix& Projection = ProjectionData.ProjectionMatrix;
+		if (Projection.M[0][0] <= UE_KINDA_SMALL_NUMBER || Projection.M[1][1] <= UE_KINDA_SMALL_NUMBER)
+		{
+			return false;
+		}
+		OutTanH = static_cast<float>(1.0 / Projection.M[0][0]);
+		OutTanV = static_cast<float>(1.0 / Projection.M[1][1]);
+		return true;
+	}
+}
+
+UPER_CameraFramingComponent::UPER_CameraFramingComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UPER_CameraFramingComponent::GetFramingTargets(TArray<UPER_CameraTargetComponent*>& OutTargets) const
+{
+	UPER_CameraTargetComponent::GetActiveTargets(GetWorld(), OutTargets);
+	const FVector PlayerLocation = GetOwner()->GetActorLocation();
+	OutTargets.RemoveAllSwap([&PlayerLocation](const UPER_CameraTargetComponent* Target)
+	{
+		return !Target->IsWithinFramingDistance(PlayerLocation);
+	});
+}
+
+void UPER_CameraFramingComponent::ApplyFraming(const APlayerController* PC, float DeltaTime, FMinimalViewInfo& InOutPOV)
+{
+	const FRotationMatrix ViewMatrix(InOutPOV.Rotation);
+	const FVector Forward = ViewMatrix.GetScaledAxis(EAxis::X);
+	const FVector Right = ViewMatrix.GetScaledAxis(EAxis::Y);
+	const FVector Up = ViewMatrix.GetScaledAxis(EAxis::Z);
+
+	// 鏡頭往後退 D 後，目標在畫面上的位置 = 側向距離 / ((深度 + D) × tan 半視角)，
+	// 要落在安全框內（≤ 比例）所需的最小 D 可以直接解出來
+	float Required = -MAX_flt;
+	TArray<UPER_CameraTargetComponent*> Targets;
+	GetFramingTargets(Targets);
+	float TanH = 0.f;
+	float TanV = 0.f;
+	if (Targets.Num() > 0 && InOutPOV.ProjectionMode == ECameraProjectionMode::Perspective && GetTanHalfFov(PC, TanH, TanV))
+	{
+		const float LimitH = TanH * SafeFrameWidthRatio;
+		const float LimitV = TanV * SafeFrameHeightRatio;
+		for (const UPER_CameraTargetComponent* Target : Targets)
+		{
+			const FVector ToTarget = Target->GetComponentLocation() - InOutPOV.Location;
+			const float Depth = static_cast<float>(ToTarget | Forward);
+			const float Side = static_cast<float>(FMath::Abs(ToTarget | Right));
+			const float Vertical = static_cast<float>(FMath::Abs(ToTarget | Up));
+			Required = FMath::Max3(Required, Side / LimitH - Depth, Vertical / LimitV - Depth);
+		}
+	}
+
+#if ENABLE_DRAW_DEBUG
+	DebugTanH = TanH;
+	DebugTanV = TanV;
+	DebugRawRequired = Required;
+	DebugTargetCount = Targets.Num();
+	DebugApplyFrame = GFrameCounter;
+#endif
+
+	RequiredPullBack = FMath::Clamp(Required, 0.f, MaxPullBackDistance);
+	const float Speed = RequiredPullBack > CurrentPullBack ? PullOutSpeed : PullInSpeed;
+	CurrentPullBack = FMath::FInterpTo(CurrentPullBack, RequiredPullBack, DeltaTime, Speed);
+	InOutPOV.Location -= Forward * CurrentPullBack;
+}
+
+void UPER_CameraFramingComponent::BeginPlay()
+{
+	Super::BeginPlay();
+#if ENABLE_DRAW_DEBUG
+	DebugDrawHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &UPER_CameraFramingComponent::DrawSafeFrameDebug));
+#endif
+}
+
+void UPER_CameraFramingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+#if ENABLE_DRAW_DEBUG
+	UDebugDrawService::Unregister(DebugDrawHandle);
+	DebugDrawHandle.Reset();
+#endif
+	Super::EndPlay(EndPlayReason);
+}
+
+#if ENABLE_DRAW_DEBUG
+void UPER_CameraFramingComponent::DrawSafeFrameDebug(UCanvas* Canvas, APlayerController* PC)
+{
+	if (!CVarShowCameraSafeFrame.GetValueOnGameThread())
+	{
+		return;
+	}
+	if (!Canvas || !Canvas->SceneView || !PC || PC->GetPawn() != GetOwner())
+	{
+		return;
+	}
+
+	const FSceneView* View = Canvas->SceneView;
+	const FIntRect Rect = View->UnscaledViewRect;
+	if (Rect.Width() <= 0 || Rect.Height() <= 0)
+	{
+		return;
+	}
+
+	const FVector2D Center(Rect.Width() * 0.5f, Rect.Height() * 0.5f);
+	const FVector2D HalfExtent(Center.X * SafeFrameWidthRatio, Center.Y * SafeFrameHeightRatio);
+	const FLinearColor FrameColor = FLinearColor::Green;
+
+	FCanvasBoxItem Frame(Center - HalfExtent, HalfExtent * 2.f);
+	Frame.SetColor(FrameColor);
+	Frame.LineThickness = 2.f;
+	Canvas->DrawItem(Frame);
+
+	TArray<UPER_CameraTargetComponent*> Targets;
+	GetFramingTargets(Targets);
+
+	const FString Label = FString::Printf(TEXT("SAFE %.0f%% x %.0f%%  Targets %d  PullBack %.0f / %.0f (Max %.0f)"),
+		SafeFrameWidthRatio * 100.f, SafeFrameHeightRatio * 100.f, Targets.Num(), CurrentPullBack, RequiredPullBack, MaxPullBackDistance);
+	FCanvasTextItem Text(Center - HalfExtent + FVector2D(6.f, 4.f), FText::FromString(Label), GEngine->GetSmallFont(), FrameColor);
+	Text.EnableShadow(FLinearColor::Black);
+	Canvas->DrawItem(Text);
+
+	const FString Detail = FString::Printf(TEXT("Solver: Targets %d  TanH %.3f  TanV %.3f  Raw %.0f  FramesAgo %llu"),
+		DebugTargetCount, DebugTanH, DebugTanV, DebugRawRequired, GFrameCounter - DebugApplyFrame);
+	FCanvasTextItem DetailText(Center - HalfExtent + FVector2D(6.f, 20.f), FText::FromString(Detail), GEngine->GetSmallFont(), FrameColor);
+	DetailText.EnableShadow(FLinearColor::Black);
+	Canvas->DrawItem(DetailText);
+
+	// 目標點：框內綠色、框外紅色
+	const FVector2D MarkerHalf(6.f, 6.f);
+	for (const UPER_CameraTargetComponent* Target : Targets)
+	{
+		FVector2D Screen;
+		if (!FSceneView::ProjectWorldToScreen(Target->GetComponentLocation(), Rect, View->ViewMatrices.GetViewProjectionMatrix(), Screen))
+		{
+			continue;
+		}
+		Screen -= FVector2D(Rect.Min.X, Rect.Min.Y);
+		const FVector2D Offset = Screen - Center;
+		const bool bInside = FMath::Abs(Offset.X) <= HalfExtent.X && FMath::Abs(Offset.Y) <= HalfExtent.Y;
+		const FLinearColor MarkerColor = bInside ? FLinearColor::Green : FLinearColor::Red;
+
+		FCanvasBoxItem Marker(Screen - MarkerHalf, MarkerHalf * 2.f);
+		Marker.SetColor(MarkerColor);
+		Marker.LineThickness = 2.f;
+		Canvas->DrawItem(Marker);
+
+		FCanvasTextItem Name(Screen + FVector2D(8.f, -6.f), FText::FromString(GetNameSafe(Target->GetOwner())), GEngine->GetSmallFont(), MarkerColor);
+		Name.EnableShadow(FLinearColor::Black);
+		Canvas->DrawItem(Name);
+	}
+}
+#endif
+```
+
+### PER_CameraTargetComponent.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/SceneComponent.h"
+#include "PER_CameraTargetComponent.generated.h"
+
+/**
+ * 鏡頭安全框的目標點。放在角色 BP 或掛 Socket，啟用後玩家鏡頭會拉遠，讓這個點保持在安全框內。
+ * 預設不啟用，藍圖呼叫 SetCameraTargetActive(true) 啟用。
+ */
+UCLASS(ClassGroup = (Camera), meta = (BlueprintSpawnableComponent))
+class YOURMODULE_API UPER_CameraTargetComponent : public USceneComponent
+{
+	GENERATED_BODY()
+
+public:
+	UPER_CameraTargetComponent();
+
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera")
+	void SetCameraTargetActive(bool bActive);
+
+	UFUNCTION(BlueprintPure, Category = "PER|Camera")
+	bool IsCameraTargetActive() const { return bCameraTargetActive; }
+
+	/** 跟主角的距離超過此值時，即使已啟用也不納入安全框；回到範圍內立即納入。0 為不限距離 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float MaxFramingDistance = 0.f;
+
+	bool IsWithinFramingDistance(const FVector& PlayerLocation) const;
+
+	static void GetActiveTargets(const UWorld* World, TArray<UPER_CameraTargetComponent*>& OutTargets);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PER|Camera")
+	bool bCameraTargetActive = false;
+};
+```
+
+### PER_CameraTargetComponent.cpp
+
+```cpp
+#include "Camera/PER_CameraTargetComponent.h"
+
+#include "UObject/UObjectIterator.h"
+
+UPER_CameraTargetComponent::UPER_CameraTargetComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+#if WITH_EDITORONLY_DATA
+	bVisualizeComponent = true;
+#endif
+}
+
+void UPER_CameraTargetComponent::SetCameraTargetActive(bool bActive)
+{
+	bCameraTargetActive = bActive;
+}
+
+bool UPER_CameraTargetComponent::IsWithinFramingDistance(const FVector& PlayerLocation) const
+{
+	return MaxFramingDistance <= 0.f || FVector::DistSquared(GetComponentLocation(), PlayerLocation) <= FMath::Square(MaxFramingDistance);
+}
+
+void UPER_CameraTargetComponent::GetActiveTargets(const UWorld* World, TArray<UPER_CameraTargetComponent*>& OutTargets)
+{
+	for (TObjectIterator<UPER_CameraTargetComponent> It; It; ++It)
+	{
+		UPER_CameraTargetComponent* Target = *It;
+		if (IsValid(Target) && Target->bCameraTargetActive && !Target->IsTemplate() && Target->GetWorld() == World)
+		{
+			OutTargets.Add(Target);
+		}
+	}
+}
+```
+
+### PER_CameraDynamicsData.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
+#include "Curves/CurveVector.h"
+#include "Engine/DataAsset.h"
+#include "PER_CameraDynamicsData.generated.h"
+
+struct FMinimalViewInfo;
+
+/** 附加鏡頭效果的單一項目，依曲線時間改動畫面。新增效果種類就繼承這個類別 */
+UCLASS(Abstract, EditInlineNew, DefaultToInstanced, CollapseCategories)
+class YOURMODULE_API UPER_CameraDynamicsModifier : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	/** 曲線最後一個 Key 的時間，作為效果長度 */
+	virtual float GetDuration() const { return 0.f; }
+
+	/** Weight 為淡入淡出權重（0~1），效果值要乘上它 */
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const {}
+};
+
+UENUM(BlueprintType)
+enum class EPER_CameraOffsetSpace : uint8
+{
+	World,
+	/** X 前、Y 右、Z 上，以鏡頭朝向為準 */
+	Camera,
+};
+
+/** 位置偏移，例如 Boss 跳起時鏡頭往上移 */
+UCLASS(DisplayName = "Position Offset")
+class YOURMODULE_API UPER_CameraDynamics_Offset : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	EPER_CameraOffsetSpace Space = EPER_CameraOffsetSpace::World;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeVectorCurve Offset;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/** 沿鏡頭方向拉遠（正值）或拉近（負值），效果等同改 Arm 長度 */
+UCLASS(DisplayName = "Arm Distance")
+class YOURMODULE_API UPER_CameraDynamics_Distance : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeFloatCurve Distance;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/** FOV 加減（度） */
+UCLASS(DisplayName = "FOV")
+class YOURMODULE_API UPER_CameraDynamics_FOV : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeFloatCurve FOVOffset;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/**
+ * 附加鏡頭效果組合。用 APER_PlayerCameraManager::AddCameraDynamics 播放，
+ * 曲線跑完自動結束；勾 bLoop 則持續到 RemoveCameraDynamics。
+ */
+UCLASS(BlueprintType)
+class YOURMODULE_API UPER_CameraDynamicsData : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Instanced, Category = "PER|Camera")
+	TArray<TObjectPtr<UPER_CameraDynamicsModifier>> Modifiers;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	bool bLoop = false;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float BlendInTime = 0.f;
+
+	/** 自然結束前與 Remove 時的淡出時間 */
+	UPROPERTY(EditAnywhere, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float BlendOutTime = 0.2f;
+
+	/** 所有效果中最長的曲線時間 */
+	float GetDuration() const;
+};
+```
+
+### PER_CameraDynamicsData.cpp
+
+```cpp
+#include "Camera/PER_CameraDynamicsData.h"
+
+#include "Camera/CameraTypes.h"
+
+namespace
+{
+	float GetCurveEndTime(const FRichCurve* Curve)
+	{
+		return Curve && Curve->GetNumKeys() > 0 ? Curve->GetLastKey().Time : 0.f;
+	}
+
+	float EvalCurve(const FRichCurve* Curve, float Time)
+	{
+		return Curve ? Curve->Eval(Time) : 0.f;
+	}
+}
+
+float UPER_CameraDynamics_Offset::GetDuration() const
+{
+	float Duration = 0.f;
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		Duration = FMath::Max(Duration, GetCurveEndTime(Offset.GetRichCurveConst(Axis)));
+	}
+	return Duration;
+}
+
+void UPER_CameraDynamics_Offset::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	FVector Value;
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		Value[Axis] = EvalCurve(Offset.GetRichCurveConst(Axis), Time);
+	}
+	if (Space == EPER_CameraOffsetSpace::Camera)
+	{
+		Value = InOutPOV.Rotation.RotateVector(Value);
+	}
+	InOutPOV.Location += Value * Weight;
+}
+
+float UPER_CameraDynamics_Distance::GetDuration() const
+{
+	return GetCurveEndTime(Distance.GetRichCurveConst());
+}
+
+void UPER_CameraDynamics_Distance::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	InOutPOV.Location -= InOutPOV.Rotation.Vector() * EvalCurve(Distance.GetRichCurveConst(), Time) * Weight;
+}
+
+float UPER_CameraDynamics_FOV::GetDuration() const
+{
+	return GetCurveEndTime(FOVOffset.GetRichCurveConst());
+}
+
+void UPER_CameraDynamics_FOV::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	InOutPOV.FOV = FMath::Clamp(InOutPOV.FOV + EvalCurve(FOVOffset.GetRichCurveConst(), Time) * Weight, 1.f, 170.f);
+}
+
+float UPER_CameraDynamicsData::GetDuration() const
+{
+	float Duration = 0.f;
+	for (const UPER_CameraDynamicsModifier* Modifier : Modifiers)
+	{
+		if (Modifier)
+		{
+			Duration = FMath::Max(Duration, Modifier->GetDuration());
+		}
+	}
+	return Duration;
+}
+```
+
+### 玩家、AI 角色與 Controller（新增段落）
+
+玩家角色建構子加上安全框元件：
+
+```cpp
+// PlayerCharacter.h
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+TObjectPtr<UPER_CameraFramingComponent> CameraFramingComponent;
+
+// PlayerCharacter.cpp（建構子）
+CameraFramingComponent = CreateDefaultSubobject<UPER_CameraFramingComponent>(TEXT("CameraFramingComponent"));
+```
+
+AI 角色建構子加上目標點（預設放在膠囊中心）：
+
+```cpp
+// AICharacter.h
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+TObjectPtr<UPER_CameraTargetComponent> CameraTargetComponent;
+
+// AICharacter.cpp（建構子）
+CameraTargetComponent = CreateDefaultSubobject<UPER_CameraTargetComponent>(TEXT("CameraTargetComponent"));
+CameraTargetComponent->SetupAttachment(RootComponent);
+```
+
+PlayerController 建構子指定 CameraManager：
+
+```cpp
+PlayerCameraManagerClass = APER_PlayerCameraManager::StaticClass();
+```
 
 ---
 
