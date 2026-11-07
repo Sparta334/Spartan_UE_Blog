@@ -8,7 +8,7 @@ draft: false
 ---
 
 > A custom PlayerCameraManager, plus two components and a DataAsset, let a top-down camera "automatically keep targets in frame" and "play short camera moves for a performance".
-> The `PER_` prefix in this post is the demo project's naming; replace it with your own project's name.
+> The `PER_` prefix in this post is the demo project's naming, and `YOURMODULE_API` should be your own module's; the full source is at the end.
 > ⚠️ Everything below was implemented and verified on **UE 5.8**. Engine behavior may differ in other versions.
 
 ---
@@ -397,6 +397,771 @@ void APER_PlayerCameraManager::UpdateCamera(float DeltaTime)
 3. Add an **Arm Distance**: 0 s → 0, 0.4 s → 300, 1.0 s → 0.
 4. `BlendInTime = 0.1`, `BlendOutTime = 0.2`.
 5. Call `AddCameraDynamics(CD_BossJump)` from the boss jump animation's AnimNotify or from the ability.
+
+---
+
+## Full source
+
+> The full source of the `Camera/` folder. Replace `YOURMODULE_API` with your module's API macro; `UE_LOG` uses `LogTemp`, which you can swap for your project's own log category.
+
+### PER_PlayerCameraManager.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Camera/PlayerCameraManager.h"
+#include "PER_PlayerCameraManager.generated.h"
+
+class UPER_CameraDynamicsData;
+
+USTRUCT()
+struct FPER_ActiveCameraDynamics
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<UPER_CameraDynamicsData> Data;
+
+	float Elapsed = 0.f;
+	float Duration = 0.f;
+	/** < 0 means Remove hasn't been called yet */
+	float StopElapsed = -1.f;
+};
+
+/**
+ * Player camera: after the Pawn's camera is computed and before Camera Modifiers (CineShot, shakes) apply,
+ * applies the safe-frame pull-back (UPER_CameraFramingComponent) and then the additive camera effects (UPER_CameraDynamicsData).
+ * Neither applies when the ViewTarget isn't the player Pawn (LevelSequence cutscenes).
+ */
+UCLASS()
+class YOURMODULE_API APER_PlayerCameraManager : public APlayerCameraManager
+{
+	GENERATED_BODY()
+
+public:
+	/** Play an additive effect on the local player's camera. Calling the same Data again stacks */
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera", meta = (WorldContext = "WorldContextObject"))
+	static bool AddCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data);
+
+	/** Blend out and remove every active instance of this Data */
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera", meta = (WorldContext = "WorldContextObject"))
+	static void RemoveCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data);
+
+	virtual void UpdateCamera(float DeltaTime) override;
+
+protected:
+	virtual void UpdateViewTargetInternal(FTViewTarget& OutVT, float DeltaTime) override;
+
+private:
+	static APER_PlayerCameraManager* GetLocalCameraManager(const UObject* WorldContextObject);
+	static float GetWeight(const FPER_ActiveCameraDynamics& Active);
+
+	UPROPERTY(Transient)
+	TArray<FPER_ActiveCameraDynamics> ActiveDynamics;
+};
+```
+
+### PER_PlayerCameraManager.cpp
+
+```cpp
+#include "Camera/PER_PlayerCameraManager.h"
+
+#include "Camera/PER_CameraDynamicsData.h"
+#include "Camera/PER_CameraFramingComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+
+bool APER_PlayerCameraManager::AddCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data)
+{
+	APER_PlayerCameraManager* Manager = GetLocalCameraManager(WorldContextObject);
+	if (!Manager || !Data)
+	{
+		return false;
+	}
+	const float Duration = Data->GetDuration();
+	if (!Data->bLoop && Duration <= 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddCameraDynamics: %s has no curve keys and bLoop is off, so it has no effect"), *GetNameSafe(Data));
+		return false;
+	}
+	FPER_ActiveCameraDynamics& Active = Manager->ActiveDynamics.AddDefaulted_GetRef();
+	Active.Data = Data;
+	Active.Duration = Duration;
+	return true;
+}
+
+void APER_PlayerCameraManager::RemoveCameraDynamics(const UObject* WorldContextObject, UPER_CameraDynamicsData* Data)
+{
+	APER_PlayerCameraManager* Manager = GetLocalCameraManager(WorldContextObject);
+	if (!Manager)
+	{
+		return;
+	}
+	for (FPER_ActiveCameraDynamics& Active : Manager->ActiveDynamics)
+	{
+		if (Active.Data == Data && Active.StopElapsed < 0.f)
+		{
+			Active.StopElapsed = 0.f;
+		}
+	}
+}
+
+APER_PlayerCameraManager* APER_PlayerCameraManager::GetLocalCameraManager(const UObject* WorldContextObject)
+{
+	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(WorldContextObject, 0);
+	APER_PlayerCameraManager* PERManager = Cast<APER_PlayerCameraManager>(Manager);
+	if (Manager && !PERManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("The player's PlayerCameraManager is not APER_PlayerCameraManager (%s); additive camera effects can't play"), *GetNameSafe(Manager->GetClass()));
+	}
+	return PERManager;
+}
+
+float APER_PlayerCameraManager::GetWeight(const FPER_ActiveCameraDynamics& Active)
+{
+	const UPER_CameraDynamicsData* Data = Active.Data;
+	float Weight = Data->BlendInTime > 0.f ? FMath::Clamp(Active.Elapsed / Data->BlendInTime, 0.f, 1.f) : 1.f;
+	if (!Data->bLoop && Data->BlendOutTime > 0.f)
+	{
+		Weight = FMath::Min(Weight, FMath::Clamp((Active.Duration - Active.Elapsed) / Data->BlendOutTime, 0.f, 1.f));
+	}
+	if (Active.StopElapsed >= 0.f)
+	{
+		Weight = FMath::Min(Weight, Data->BlendOutTime > 0.f ? FMath::Clamp(1.f - Active.StopElapsed / Data->BlendOutTime, 0.f, 1.f) : 0.f);
+	}
+	return FMath::SmoothStep(0.f, 1.f, Weight);
+}
+
+void APER_PlayerCameraManager::UpdateCamera(float DeltaTime)
+{
+	// Advance time here: UpdateViewTargetInternal runs twice per frame while blending between ViewTargets
+	ActiveDynamics.RemoveAll([DeltaTime](FPER_ActiveCameraDynamics& Active)
+	{
+		if (!Active.Data)
+		{
+			return true;
+		}
+		Active.Elapsed += DeltaTime;
+		if (Active.StopElapsed >= 0.f)
+		{
+			Active.StopElapsed += DeltaTime;
+			if (Active.StopElapsed >= Active.Data->BlendOutTime)
+			{
+				return true;
+			}
+		}
+		return !Active.Data->bLoop && Active.Elapsed >= Active.Duration;
+	});
+
+	Super::UpdateCamera(DeltaTime);
+}
+
+void APER_PlayerCameraManager::UpdateViewTargetInternal(FTViewTarget& OutVT, float DeltaTime)
+{
+	Super::UpdateViewTargetInternal(OutVT, DeltaTime);
+
+	APawn* Pawn = PCOwner ? PCOwner->GetPawn() : nullptr;
+	if (!Pawn || OutVT.Target != Pawn)
+	{
+		return;
+	}
+
+	if (UPER_CameraFramingComponent* Framing = Pawn->FindComponentByClass<UPER_CameraFramingComponent>())
+	{
+		Framing->ApplyFraming(PCOwner, DeltaTime, OutVT.POV);
+	}
+
+	for (const FPER_ActiveCameraDynamics& Active : ActiveDynamics)
+	{
+		const float Weight = GetWeight(Active);
+		if (Weight <= 0.f)
+		{
+			continue;
+		}
+		const float Time = Active.Data->bLoop && Active.Duration > 0.f ? FMath::Fmod(Active.Elapsed, Active.Duration) : Active.Elapsed;
+		for (const UPER_CameraDynamicsModifier* Modifier : Active.Data->Modifiers)
+		{
+			if (Modifier)
+			{
+				Modifier->ApplyToView(Time, Weight, OutVT.POV);
+			}
+		}
+	}
+}
+```
+
+### PER_CameraFramingComponent.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "EngineDefines.h"
+#include "PER_CameraFramingComponent.generated.h"
+
+class APlayerController;
+class UCanvas;
+struct FMinimalViewInfo;
+
+/**
+ * Safe frame for the player camera. Attached to the player character; APER_PlayerCameraManager calls ApplyFraming every frame:
+ * when an active UPER_CameraTargetComponent leaves the safe frame, the camera pulls back along the view direction (like lengthening the SpringArm)
+ * while still aiming at the player, and returns once everything is back inside. CameraBoom's TargetArmLength is untouched, so Blueprint camera animations such as a death camera keep working.
+ */
+UCLASS(ClassGroup = (Camera), meta = (BlueprintSpawnableComponent))
+class YOURMODULE_API UPER_CameraFramingComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UPER_CameraFramingComponent();
+
+	/** Safe frame width / height as a fraction of the screen; outside it is the no-go zone */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float SafeFrameWidthRatio = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float SafeFrameHeightRatio = 0.7f;
+
+	/** Maximum pull-back distance */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float MaxPullBackDistance = 2000.f;
+
+	/** Interpolation speeds for camera changes */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float PullOutSpeed = 4.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float PullInSpeed = 1.5f;
+
+	UFUNCTION(BlueprintPure, Category = "PER|Camera")
+	float GetCurrentPullBack() const { return CurrentPullBack; }
+
+	void ApplyFraming(const APlayerController* PC, float DeltaTime, FMinimalViewInfo& InOutPOV);
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	/** Targets that are active and within their own MaxFramingDistance */
+	void GetFramingTargets(TArray<class UPER_CameraTargetComponent*>& OutTargets) const;
+
+	float CurrentPullBack = 0.f;
+	float RequiredPullBack = 0.f;
+
+#if ENABLE_DRAW_DEBUG
+	void DrawSafeFrameDebug(UCanvas* Canvas, APlayerController* PC);
+	FDelegateHandle DebugDrawHandle;
+
+	// ApplyFraming's solver inputs, shown in the debug text
+	float DebugTanH = 0.f;
+	float DebugTanV = 0.f;
+	float DebugRawRequired = 0.f;
+	int32 DebugTargetCount = 0;
+	uint64 DebugApplyFrame = 0;
+#endif
+};
+```
+
+### PER_CameraFramingComponent.cpp
+
+```cpp
+#include "Camera/PER_CameraFramingComponent.h"
+
+#include "Camera/CameraTypes.h"
+#include "Camera/PER_CameraTargetComponent.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
+#include "SceneView.h"
+
+#if ENABLE_DRAW_DEBUG
+#include "CanvasItem.h"
+#include "Debug/DebugDrawService.h"
+#include "Engine/Canvas.h"
+#include "Engine/Engine.h"
+#include "HAL/IConsoleManager.h"
+
+/** Enter PER.ShowCameraSafeFrame 1 in the console to show the safe frame, targets and pull-back values */
+static TAutoConsoleVariable<bool> CVarShowCameraSafeFrame(
+	TEXT("PER.ShowCameraSafeFrame"),
+	false,
+	TEXT("Show the camera safe frame, its targets and the camera pull-back distance"),
+	ECVF_Cheat);
+#endif
+
+namespace
+{
+	/**
+	 * Tangent of the horizontal / vertical half-FOV, read straight from the projection matrix the engine renders with (last frame's view),
+	 * so the FOV axis and aspect ratio always match the screen (M[0][0] = 1 / tan horizontal half-FOV, M[1][1] = 1 / tan vertical half-FOV)
+	 */
+	bool GetTanHalfFov(const APlayerController* PC, float& OutTanH, float& OutTanV)
+	{
+		const ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+		if (!LocalPlayer || !LocalPlayer->ViewportClient || !LocalPlayer->ViewportClient->Viewport)
+		{
+			return false;
+		}
+		FSceneViewProjectionData ProjectionData;
+		if (!LocalPlayer->GetProjectionData(LocalPlayer->ViewportClient->Viewport, ProjectionData))
+		{
+			return false;
+		}
+		const FMatrix& Projection = ProjectionData.ProjectionMatrix;
+		if (Projection.M[0][0] <= UE_KINDA_SMALL_NUMBER || Projection.M[1][1] <= UE_KINDA_SMALL_NUMBER)
+		{
+			return false;
+		}
+		OutTanH = static_cast<float>(1.0 / Projection.M[0][0]);
+		OutTanV = static_cast<float>(1.0 / Projection.M[1][1]);
+		return true;
+	}
+}
+
+UPER_CameraFramingComponent::UPER_CameraFramingComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UPER_CameraFramingComponent::GetFramingTargets(TArray<UPER_CameraTargetComponent*>& OutTargets) const
+{
+	UPER_CameraTargetComponent::GetActiveTargets(GetWorld(), OutTargets);
+	const FVector PlayerLocation = GetOwner()->GetActorLocation();
+	OutTargets.RemoveAllSwap([&PlayerLocation](const UPER_CameraTargetComponent* Target)
+	{
+		return !Target->IsWithinFramingDistance(PlayerLocation);
+	});
+}
+
+void UPER_CameraFramingComponent::ApplyFraming(const APlayerController* PC, float DeltaTime, FMinimalViewInfo& InOutPOV)
+{
+	const FRotationMatrix ViewMatrix(InOutPOV.Rotation);
+	const FVector Forward = ViewMatrix.GetScaledAxis(EAxis::X);
+	const FVector Right = ViewMatrix.GetScaledAxis(EAxis::Y);
+	const FVector Up = ViewMatrix.GetScaledAxis(EAxis::Z);
+
+	// After the camera backs up by D, the target's screen position = side distance / ((depth + D) x tan half-FOV),
+	// so the minimum D that keeps it inside the safe frame (<= ratio) can be solved directly
+	float Required = -MAX_flt;
+	TArray<UPER_CameraTargetComponent*> Targets;
+	GetFramingTargets(Targets);
+	float TanH = 0.f;
+	float TanV = 0.f;
+	if (Targets.Num() > 0 && InOutPOV.ProjectionMode == ECameraProjectionMode::Perspective && GetTanHalfFov(PC, TanH, TanV))
+	{
+		const float LimitH = TanH * SafeFrameWidthRatio;
+		const float LimitV = TanV * SafeFrameHeightRatio;
+		for (const UPER_CameraTargetComponent* Target : Targets)
+		{
+			const FVector ToTarget = Target->GetComponentLocation() - InOutPOV.Location;
+			const float Depth = static_cast<float>(ToTarget | Forward);
+			const float Side = static_cast<float>(FMath::Abs(ToTarget | Right));
+			const float Vertical = static_cast<float>(FMath::Abs(ToTarget | Up));
+			Required = FMath::Max3(Required, Side / LimitH - Depth, Vertical / LimitV - Depth);
+		}
+	}
+
+#if ENABLE_DRAW_DEBUG
+	DebugTanH = TanH;
+	DebugTanV = TanV;
+	DebugRawRequired = Required;
+	DebugTargetCount = Targets.Num();
+	DebugApplyFrame = GFrameCounter;
+#endif
+
+	RequiredPullBack = FMath::Clamp(Required, 0.f, MaxPullBackDistance);
+	const float Speed = RequiredPullBack > CurrentPullBack ? PullOutSpeed : PullInSpeed;
+	CurrentPullBack = FMath::FInterpTo(CurrentPullBack, RequiredPullBack, DeltaTime, Speed);
+	InOutPOV.Location -= Forward * CurrentPullBack;
+}
+
+void UPER_CameraFramingComponent::BeginPlay()
+{
+	Super::BeginPlay();
+#if ENABLE_DRAW_DEBUG
+	DebugDrawHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &UPER_CameraFramingComponent::DrawSafeFrameDebug));
+#endif
+}
+
+void UPER_CameraFramingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+#if ENABLE_DRAW_DEBUG
+	UDebugDrawService::Unregister(DebugDrawHandle);
+	DebugDrawHandle.Reset();
+#endif
+	Super::EndPlay(EndPlayReason);
+}
+
+#if ENABLE_DRAW_DEBUG
+void UPER_CameraFramingComponent::DrawSafeFrameDebug(UCanvas* Canvas, APlayerController* PC)
+{
+	if (!CVarShowCameraSafeFrame.GetValueOnGameThread())
+	{
+		return;
+	}
+	if (!Canvas || !Canvas->SceneView || !PC || PC->GetPawn() != GetOwner())
+	{
+		return;
+	}
+
+	const FSceneView* View = Canvas->SceneView;
+	const FIntRect Rect = View->UnscaledViewRect;
+	if (Rect.Width() <= 0 || Rect.Height() <= 0)
+	{
+		return;
+	}
+
+	const FVector2D Center(Rect.Width() * 0.5f, Rect.Height() * 0.5f);
+	const FVector2D HalfExtent(Center.X * SafeFrameWidthRatio, Center.Y * SafeFrameHeightRatio);
+	const FLinearColor FrameColor = FLinearColor::Green;
+
+	FCanvasBoxItem Frame(Center - HalfExtent, HalfExtent * 2.f);
+	Frame.SetColor(FrameColor);
+	Frame.LineThickness = 2.f;
+	Canvas->DrawItem(Frame);
+
+	TArray<UPER_CameraTargetComponent*> Targets;
+	GetFramingTargets(Targets);
+
+	const FString Label = FString::Printf(TEXT("SAFE %.0f%% x %.0f%%  Targets %d  PullBack %.0f / %.0f (Max %.0f)"),
+		SafeFrameWidthRatio * 100.f, SafeFrameHeightRatio * 100.f, Targets.Num(), CurrentPullBack, RequiredPullBack, MaxPullBackDistance);
+	FCanvasTextItem Text(Center - HalfExtent + FVector2D(6.f, 4.f), FText::FromString(Label), GEngine->GetSmallFont(), FrameColor);
+	Text.EnableShadow(FLinearColor::Black);
+	Canvas->DrawItem(Text);
+
+	const FString Detail = FString::Printf(TEXT("Solver: Targets %d  TanH %.3f  TanV %.3f  Raw %.0f  FramesAgo %llu"),
+		DebugTargetCount, DebugTanH, DebugTanV, DebugRawRequired, GFrameCounter - DebugApplyFrame);
+	FCanvasTextItem DetailText(Center - HalfExtent + FVector2D(6.f, 20.f), FText::FromString(Detail), GEngine->GetSmallFont(), FrameColor);
+	DetailText.EnableShadow(FLinearColor::Black);
+	Canvas->DrawItem(DetailText);
+
+	// Targets: green inside the frame, red outside
+	const FVector2D MarkerHalf(6.f, 6.f);
+	for (const UPER_CameraTargetComponent* Target : Targets)
+	{
+		FVector2D Screen;
+		if (!FSceneView::ProjectWorldToScreen(Target->GetComponentLocation(), Rect, View->ViewMatrices.GetViewProjectionMatrix(), Screen))
+		{
+			continue;
+		}
+		Screen -= FVector2D(Rect.Min.X, Rect.Min.Y);
+		const FVector2D Offset = Screen - Center;
+		const bool bInside = FMath::Abs(Offset.X) <= HalfExtent.X && FMath::Abs(Offset.Y) <= HalfExtent.Y;
+		const FLinearColor MarkerColor = bInside ? FLinearColor::Green : FLinearColor::Red;
+
+		FCanvasBoxItem Marker(Screen - MarkerHalf, MarkerHalf * 2.f);
+		Marker.SetColor(MarkerColor);
+		Marker.LineThickness = 2.f;
+		Canvas->DrawItem(Marker);
+
+		FCanvasTextItem Name(Screen + FVector2D(8.f, -6.f), FText::FromString(GetNameSafe(Target->GetOwner())), GEngine->GetSmallFont(), MarkerColor);
+		Name.EnableShadow(FLinearColor::Black);
+		Canvas->DrawItem(Name);
+	}
+}
+#endif
+```
+
+### PER_CameraTargetComponent.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/SceneComponent.h"
+#include "PER_CameraTargetComponent.generated.h"
+
+/**
+ * A target point for the camera safe frame. Put it in a character BP or on a socket; when active, the player camera pulls back to keep this point inside the safe frame.
+ * Disabled by default; call SetCameraTargetActive(true) from Blueprint to enable it.
+ */
+UCLASS(ClassGroup = (Camera), meta = (BlueprintSpawnableComponent))
+class YOURMODULE_API UPER_CameraTargetComponent : public USceneComponent
+{
+	GENERATED_BODY()
+
+public:
+	UPER_CameraTargetComponent();
+
+	UFUNCTION(BlueprintCallable, Category = "PER|Camera")
+	void SetCameraTargetActive(bool bActive);
+
+	UFUNCTION(BlueprintPure, Category = "PER|Camera")
+	bool IsCameraTargetActive() const { return bCameraTargetActive; }
+
+	/** Ignored by the safe frame while farther than this from the player, even when active; included again as soon as it is back in range. 0 means no limit */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float MaxFramingDistance = 0.f;
+
+	bool IsWithinFramingDistance(const FVector& PlayerLocation) const;
+
+	static void GetActiveTargets(const UWorld* World, TArray<UPER_CameraTargetComponent*>& OutTargets);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PER|Camera")
+	bool bCameraTargetActive = false;
+};
+```
+
+### PER_CameraTargetComponent.cpp
+
+```cpp
+#include "Camera/PER_CameraTargetComponent.h"
+
+#include "UObject/UObjectIterator.h"
+
+UPER_CameraTargetComponent::UPER_CameraTargetComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+#if WITH_EDITORONLY_DATA
+	bVisualizeComponent = true;
+#endif
+}
+
+void UPER_CameraTargetComponent::SetCameraTargetActive(bool bActive)
+{
+	bCameraTargetActive = bActive;
+}
+
+bool UPER_CameraTargetComponent::IsWithinFramingDistance(const FVector& PlayerLocation) const
+{
+	return MaxFramingDistance <= 0.f || FVector::DistSquared(GetComponentLocation(), PlayerLocation) <= FMath::Square(MaxFramingDistance);
+}
+
+void UPER_CameraTargetComponent::GetActiveTargets(const UWorld* World, TArray<UPER_CameraTargetComponent*>& OutTargets)
+{
+	for (TObjectIterator<UPER_CameraTargetComponent> It; It; ++It)
+	{
+		UPER_CameraTargetComponent* Target = *It;
+		if (IsValid(Target) && Target->bCameraTargetActive && !Target->IsTemplate() && Target->GetWorld() == World)
+		{
+			OutTargets.Add(Target);
+		}
+	}
+}
+```
+
+### PER_CameraDynamicsData.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
+#include "Curves/CurveVector.h"
+#include "Engine/DataAsset.h"
+#include "PER_CameraDynamicsData.generated.h"
+
+struct FMinimalViewInfo;
+
+/** One additive camera effect entry that changes the view over curve time. Subclass this to add a new kind of effect */
+UCLASS(Abstract, EditInlineNew, DefaultToInstanced, CollapseCategories)
+class YOURMODULE_API UPER_CameraDynamicsModifier : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	/** Time of the curve's last key, used as the effect length */
+	virtual float GetDuration() const { return 0.f; }
+
+	/** Weight is the blend weight (0~1); multiply the effect value by it */
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const {}
+};
+
+UENUM(BlueprintType)
+enum class EPER_CameraOffsetSpace : uint8
+{
+	World,
+	/** X forward, Y right, Z up, relative to the camera's orientation */
+	Camera,
+};
+
+/** Position offset, e.g. the camera rises when a boss leaps */
+UCLASS(DisplayName = "Position Offset")
+class YOURMODULE_API UPER_CameraDynamics_Offset : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	EPER_CameraOffsetSpace Space = EPER_CameraOffsetSpace::World;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeVectorCurve Offset;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/** Pull out (positive) or push in (negative) along the view direction, same as changing arm length */
+UCLASS(DisplayName = "Arm Distance")
+class YOURMODULE_API UPER_CameraDynamics_Distance : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeFloatCurve Distance;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/** FOV add/subtract (degrees) */
+UCLASS(DisplayName = "FOV")
+class YOURMODULE_API UPER_CameraDynamics_FOV : public UPER_CameraDynamicsModifier
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	FRuntimeFloatCurve FOVOffset;
+
+	virtual float GetDuration() const override;
+	virtual void ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const override;
+};
+
+/**
+ * A set of additive camera effects. Play it with APER_PlayerCameraManager::AddCameraDynamics;
+ * it ends on its own when the curves finish. With bLoop it runs until RemoveCameraDynamics.
+ */
+UCLASS(BlueprintType)
+class YOURMODULE_API UPER_CameraDynamicsData : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, Instanced, Category = "PER|Camera")
+	TArray<TObjectPtr<UPER_CameraDynamicsModifier>> Modifiers;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera")
+	bool bLoop = false;
+
+	UPROPERTY(EditAnywhere, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float BlendInTime = 0.f;
+
+	/** Blend-out time before a natural end and on Remove */
+	UPROPERTY(EditAnywhere, Category = "PER|Camera", meta = (ClampMin = "0.0"))
+	float BlendOutTime = 0.2f;
+
+	/** Longest curve time across all effects */
+	float GetDuration() const;
+};
+```
+
+### PER_CameraDynamicsData.cpp
+
+```cpp
+#include "Camera/PER_CameraDynamicsData.h"
+
+#include "Camera/CameraTypes.h"
+
+namespace
+{
+	float GetCurveEndTime(const FRichCurve* Curve)
+	{
+		return Curve && Curve->GetNumKeys() > 0 ? Curve->GetLastKey().Time : 0.f;
+	}
+
+	float EvalCurve(const FRichCurve* Curve, float Time)
+	{
+		return Curve ? Curve->Eval(Time) : 0.f;
+	}
+}
+
+float UPER_CameraDynamics_Offset::GetDuration() const
+{
+	float Duration = 0.f;
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		Duration = FMath::Max(Duration, GetCurveEndTime(Offset.GetRichCurveConst(Axis)));
+	}
+	return Duration;
+}
+
+void UPER_CameraDynamics_Offset::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	FVector Value;
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		Value[Axis] = EvalCurve(Offset.GetRichCurveConst(Axis), Time);
+	}
+	if (Space == EPER_CameraOffsetSpace::Camera)
+	{
+		Value = InOutPOV.Rotation.RotateVector(Value);
+	}
+	InOutPOV.Location += Value * Weight;
+}
+
+float UPER_CameraDynamics_Distance::GetDuration() const
+{
+	return GetCurveEndTime(Distance.GetRichCurveConst());
+}
+
+void UPER_CameraDynamics_Distance::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	InOutPOV.Location -= InOutPOV.Rotation.Vector() * EvalCurve(Distance.GetRichCurveConst(), Time) * Weight;
+}
+
+float UPER_CameraDynamics_FOV::GetDuration() const
+{
+	return GetCurveEndTime(FOVOffset.GetRichCurveConst());
+}
+
+void UPER_CameraDynamics_FOV::ApplyToView(float Time, float Weight, FMinimalViewInfo& InOutPOV) const
+{
+	InOutPOV.FOV = FMath::Clamp(InOutPOV.FOV + EvalCurve(FOVOffset.GetRichCurveConst(), Time) * Weight, 1.f, 170.f);
+}
+
+float UPER_CameraDynamicsData::GetDuration() const
+{
+	float Duration = 0.f;
+	for (const UPER_CameraDynamicsModifier* Modifier : Modifiers)
+	{
+		if (Modifier)
+		{
+			Duration = FMath::Max(Duration, Modifier->GetDuration());
+		}
+	}
+	return Duration;
+}
+```
+
+### Player, AI character and Controller (added lines)
+
+Add the safe frame component in the player character's constructor:
+
+```cpp
+// PlayerCharacter.h
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+TObjectPtr<UPER_CameraFramingComponent> CameraFramingComponent;
+
+// PlayerCharacter.cpp (constructor)
+CameraFramingComponent = CreateDefaultSubobject<UPER_CameraFramingComponent>(TEXT("CameraFramingComponent"));
+```
+
+Add the target point in the AI character's constructor (at the capsule center by default):
+
+```cpp
+// AICharacter.h
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+TObjectPtr<UPER_CameraTargetComponent> CameraTargetComponent;
+
+// AICharacter.cpp (constructor)
+CameraTargetComponent = CreateDefaultSubobject<UPER_CameraTargetComponent>(TEXT("CameraTargetComponent"));
+CameraTargetComponent->SetupAttachment(RootComponent);
+```
+
+Set the CameraManager in the PlayerController's constructor:
+
+```cpp
+PlayerCameraManagerClass = APER_PlayerCameraManager::StaticClass();
+```
 
 ---
 
