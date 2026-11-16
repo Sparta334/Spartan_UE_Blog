@@ -3,7 +3,7 @@ title: "Camera Safety Area and Camera Dynamics for Top-Down Games"
 published: 2026-11-04
 description: "A top-down action game's camera usually has a fixed angle and distance, which falls short in boss fights and big set pieces. Two POV corrections inserted in the PlayerCameraManager: a safe frame that pulls back automatically, and additive camera moves described by curve assets."
 tags: [UE5, C++, Camera]
-category: UE C++
+category: Gameplay
 draft: false
 ---
 

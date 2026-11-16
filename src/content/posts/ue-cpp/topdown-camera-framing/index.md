@@ -3,7 +3,7 @@ title: "俯視角遊戲的鏡頭安全區（Safety Area）與微運鏡系統（C
 published: 2026-11-04
 description: "俯視角動作遊戲的鏡頭通常固定角度、固定距離，遇到 Boss 戰或大招演出就不夠用。在 PlayerCameraManager 裡插入兩層 POV 修正：自動拉遠的安全框，以及用曲線資產描述的附加運鏡效果。"
 tags: [UE5, C++, Camera]
-category: UE C++
+category: Gameplay
 draft: false
 ---
 

@@ -3,7 +3,7 @@ title: "第一人稱互動系統：可互動物件、互動提示與 Inspect 檢
 published: 2026-11-16
 description: "恐怖解謎類第一人稱遊戲常見的「看著東西、按鍵互動、拿起來轉著看、翻面找線索」。用一個 WorldSubsystem 加兩個玩家元件，做出穩定不閃爍的鎖定、可按住的互動提示，以及帶景深背景與熱點的物件檢視。"
 tags: [UE5, C++, Interaction, UMG]
-category: UE C++
+category: Scene/Level Design Actor
 draft: false
 ---
 
