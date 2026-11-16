@@ -37,18 +37,21 @@ draft: false
 
 ## 效果展示
 
-> 🚧 **TODO（影片）**：互動整體流程 Demo——走近物件出現提示、靠近後可按、按住進度、互動完成。
-> 建議檔名 `demo_interact.mp4`，放好後換成下面的格式：
->
-> ```html
-> <div align="center">
-> <video src="./demo_interact.mp4" controls autoplay muted loop playsinline width="800"></video>
-> <br><em>說明文字</em>
-> </div>
-> ```
+<div align="center">
+<video src="./demo_interact.mp4" controls autoplay muted loop playsinline width="800">
+</video>
+<br><em>走近物件時出現提示，進入可按範圍後按下互動鍵觸發演出</em>
+</div>
 
-> 🚧 **TODO（影片）**：Inspect Demo——拿起物件、旋轉、背景模糊變暗、翻面出現熱點、觸發後進入閱讀。
-> 建議檔名 `demo_inspect.mp4`。
+> 🎬 影片無法播放時：[下載 demo_interact.mp4](./demo_interact.mp4)
+
+<div align="center">
+<video src="./demo_inspect.mp4" controls autoplay muted loop playsinline width="800">
+</video>
+<br><em>互動後物件飛到鏡頭前，背景變暗模糊；滑鼠旋轉物件，關閉後飛回原處</em>
+</div>
+
+> 🎬 影片無法播放時：[下載 demo_inspect.mp4](./demo_inspect.mp4)
 
 ---
 
@@ -101,7 +104,7 @@ void AInteractableObject::BeginPlay()
 
 `GetInteractLocation()` 預設回傳提示 Widget 的位置，是 `BlueprintNativeEvent`，可在藍圖覆寫（例如門的互動點想放在門把上，但提示想顯示在門框旁）。
 
-> 🚧 **TODO（截圖）**：關卡中一個可互動物件的 Details 面板，框出 `Interaction` 分類的參數。建議檔名 `interact_details.jpg`。
+![可互動物件的 Details 面板](./interact_details.webp "可互動物件的 Interaction 參數：提示文字、按住秒數、兩段距離與提示縮放")
 
 ### 選出鎖定對象
 
@@ -212,7 +215,7 @@ return BestInteractable;
 
 注意 `FindBestInteractable` 會排除目前的鎖定對象（`Exclude`），所以不會出現「自己跟自己比」的情況。
 
-> 🚧 **TODO（截圖）**：開啟 `bDrawDebug` 的畫面——綠線是看得到、紅線是被擋並標出擋住的 Actor 名稱，物件上方顯示 `Distance / Interact / Prompt` 與 `IN RANGE` / `PROMPT ONLY`。建議檔名 `interact_debug.jpg`。
+![bDrawDebug 除錯顯示](./interact_debug.webp "開啟 bDrawDebug：綠色表示視線沒有被擋，物件旁顯示 Distance / Interact / Prompt 與 IN RANGE")
 
 ### 按一下與按住
 
@@ -266,9 +269,15 @@ if (Progress >= 1.0f)
 
 `CanInteract()` 也是 `BlueprintNativeEvent`，預設回傳 `bActivated`。演出播放中不想被重複觸發時，覆寫成回傳 false 即可——Interactor 下一幀就會放掉鎖定並觸發 `OnFocusEnd`，提示自然消失。
 
-> 🚧 **TODO（藍圖）**：一個可互動物件藍圖的事件圖，示範 `OnFocusBegin` / `OnFocusEnd` 做描邊（Custom Depth）、`OnHoldProgress` 驅動抽屜拉開的 Timeline、`OnInteract` 播放音效。建議檔名 `bp_interactable_events.jpg`。
+![可互動物件的藍圖事件圖](./bp_interactable_events.webp "門的藍圖：OnInteract 用 Timeline 播放開關門並切換提示文字；OnInteractRangeChanged 切換提示外觀；覆寫 CanInteract，演出播放中回傳 false")
 
-> 🚧 **TODO（影片）**：上面藍圖演出的實際效果。建議檔名 `demo_interact_fx.mp4`。
+<div align="center">
+<video src="./demo_interact_fx.mp4" controls autoplay muted loop playsinline width="800">
+</video>
+<br><em>上面藍圖的實際效果：開門、關門，演出途中提示消失</em>
+</div>
+
+> 🎬 影片無法播放時：[下載 demo_interact_fx.mp4](./demo_interact_fx.mp4)
 
 ---
 
@@ -308,9 +317,15 @@ PromptWidgetComponent->SetHiddenInGame(true);                 // 鎖定時才顯
 - **可按（IN RANGE）**：展開成按鍵圖示 + 文字（「打開」「拿起」）。
 - **有 HoldDuration**：按鍵圖示外圈畫一個圓形進度條，用 `OnHoldProgressChanged` 的值驅動材質參數。
 
-> 🚧 **TODO（藍圖）**：提示 Widget 的 UMG Designer 與事件圖——`OnInteractRangeChanged` 切換兩種外觀、`OnHoldProgressChanged` 驅動圓形進度條材質。建議檔名 `bp_prompt_widget.jpg`。
+![提示 Widget 的事件圖](./bp_prompt_widget.webp "提示 Widget：OnInteractRangeChanged 切換按鍵圖示與文字的顯示、OnPromptShown 設定文字、OnHoldProgressChanged 更新進度")
 
-> 🚧 **TODO（影片／GIF）**：提示從「小圓點」展開成「按鍵 + 文字」、按住時進度條填滿的近拍。建議檔名 `demo_prompt.mp4`。
+<div align="center">
+<video src="./demo_prompt.mp4" controls autoplay muted loop playsinline width="800">
+</video>
+<br><em>提示在「看得到」與「可以按」兩種狀態之間切換，並隨距離縮放</em>
+</div>
+
+> 🎬 影片無法播放時：[下載 demo_prompt.mp4](./demo_prompt.mp4)
 
 ### Screen Space 的透視縮放
 
@@ -419,7 +434,7 @@ void AP27PlayerCharacter::DoInteractStart()
 - **箭頭方向（X 軸）**：預設朝向玩家，也就是「物件的正面」。
 - `InspectRotation` 可以在此基礎上再加旋轉（例如信件要稍微往後仰）。
 
-> 🚧 **TODO（截圖）**：可檢視物件藍圖的 Viewport，標出青色的 `InspectPivot` 箭頭位置與方向。建議檔名 `inspect_pivot.jpg`。
+![InspectPivot 的位置與方向](./inspect_pivot.webp "青色箭頭是 InspectPivot：檢視時箭頭朝向玩家，位置就是旋轉中心")
 
 `BeginInspect` 時記下 Pivot 相對於 Actor 的 Transform，以及「物件在鏡頭空間中的旋轉」：
 
@@ -549,7 +564,7 @@ InspectLight->SetWorldLocation(CameraLocation + CameraRotation.RotateVector(Insp
 | `InspectLightRadius` | 100 cm | 補光範圍，太大會照亮周圍牆面 |
 | `InspectLightOffset` | (0, 20, 15) | 補光相對鏡頭的位置（前、右、上） |
 
-> 🚧 **TODO（截圖對比）**：同一個物件「一般畫面」與「檢視中」的對比，展示景深、暗角與補光。建議檔名 `inspect_before.jpg` / `inspect_after.jpg`。
+![一般畫面與檢視中的對比](./inspect_before_after.webp "左：一般畫面中鎖定物件；右：檢視中，背景景深模糊、暗角與曝光變暗，物件靠補光保持清楚")
 
 ### 結束：飛回或收走
 
@@ -619,7 +634,7 @@ bool UP27InspectHotspotComponent::GetFacingDot(const FVector& ViewLocation, floa
 
 把熱點擺在物件背面、X 軸朝外，玩家就必須把物件翻過來才看得到它。`FacingAngle`（預設 60°）決定要多正對才出現。
 
-> 🚧 **TODO（截圖）**：可檢視物件藍圖中熱點元件的擺放，標出熱點的 X 軸方向。建議檔名 `hotspot_setup.jpg`。
+![熱點元件的擺放](./hotspot_setup.webp "P27InspectHotspot 放在告示牌背面，X 軸朝外：翻到背面時熱點才會出現")
 
 ### 選擇與顯示
 
