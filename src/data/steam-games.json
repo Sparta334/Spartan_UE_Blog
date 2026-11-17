@@ -1,5 +1,13 @@
 [
 	{
+		"appId": 4115450,
+		"name": "影之刃零",
+		"unlocked": 66,
+		"total": 66,
+		"cover": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/40b2044606b59e0cdd9fb89738895fea8a22067c/header_tchinese.jpg",
+		"completedAt": "2026-11-13"
+	},
+	{
 		"appId": 814380,
 		"name": "Sekiro™: Shadows Die Twice",
 		"unlocked": 34,
